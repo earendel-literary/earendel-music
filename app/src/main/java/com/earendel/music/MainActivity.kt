@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable\nimport androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -331,7 +332,7 @@ private fun HomeScreen(
             Text("CURATED", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         }
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             artists.forEachIndexed { index, name ->
                 Column(Modifier.width(104.dp).clickable { onArtist(name) }, horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(Modifier.size(88.dp).background(
