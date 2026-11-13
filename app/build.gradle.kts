@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.gms.google-services")
 }
 android {
     namespace = "com.earendel.music"
@@ -10,8 +11,8 @@ android {
         applicationId = "com.earendel.music"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
     }
     buildFeatures { compose = true }
     compileOptions {
@@ -21,6 +22,11 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
