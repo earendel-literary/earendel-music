@@ -120,7 +120,7 @@ fun EarendelMusic(player: ExoPlayer) {
     MaterialTheme(colorScheme = darkColorScheme(background = ink, surface = panel, primary = violet, onBackground = Color.White, onSurface = Color.White)) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF241A38), ink, ink)))) {
             Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-                Spacer(Modifier.height(26.dp))
+                Spacer(Modifier.height(40.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("EARENDEL", color = violet, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
@@ -130,8 +130,10 @@ fun EarendelMusic(player: ExoPlayer) {
                 }
                 Spacer(Modifier.height(18.dp))
 
+                Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (tab) {
                     "Search" -> {
+                        Column(Modifier.fillMaxSize()) {
                         Text("Search", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(14.dp))
                         SearchBox(query, { query = it }, { search(query) })
@@ -139,8 +141,10 @@ fun EarendelMusic(player: ExoPlayer) {
                         Text(message, color = muted, fontSize = 12.sp)
                         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
                         TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
+                        }
                     }
                     "Library" -> {
+                        Column(Modifier.fillMaxSize()) {
                         Text("Your Library", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(14.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -163,7 +167,7 @@ fun EarendelMusic(player: ExoPlayer) {
                                 Text("YOUR PLAYLISTS", color = muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                 TextButton(onClick = { showCreate = true }) { Icon(Icons.Default.Add, null, tint = violet); Text("Create", color = violet) }
                             }
-                            LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
+                            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
                                 item {
                                     LibraryRow("Liked Songs", "${favorites.size} liked tracks", "♥", violet) { selectedPlaylist = "♥ Liked Songs" }
                                 }
@@ -173,10 +177,11 @@ fun EarendelMusic(player: ExoPlayer) {
                                 if (playlists.isEmpty()) item { Text("Your playlists will appear here. Create one to get started.", color = muted, fontSize = 13.sp) }
                             }
                         }
+                        }
                     }
                     else -> {
                         HomeScreen(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxSize(),
                             tracks = tracks,
                             favorites = favorites,
                             message = message,
@@ -188,6 +193,7 @@ fun EarendelMusic(player: ExoPlayer) {
                             onAdd = { addTrackTarget = it }
                         )
                     }
+                }
                 }
 
                 current?.let { track ->
