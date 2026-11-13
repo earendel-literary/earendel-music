@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -89,6 +91,7 @@ fun EarendelMusic(player: ExoPlayer) {
     var duration by remember { mutableFloatStateOf(0f) }
     var shuffle by remember { mutableStateOf(false) }
     var repeat by remember { mutableStateOf(false) }
+    var showNowPlaying by remember { mutableStateOf(false) }
     var showCreate by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
     var selectedPlaylist by remember { mutableStateOf<String?>(null) }
@@ -250,7 +253,7 @@ fun EarendelMusic(player: ExoPlayer) {
                 }
 
                 current?.let { track ->
-                    Column(Modifier.fillMaxWidth().animateContentSize(tween(300, easing = FastOutSlowInEasing)).background(
+                    Column(Modifier.fillMaxWidth().clickable { showNowPlaying = true }.animateContentSize(tween(300, easing = FastOutSlowInEasing)).background(
                         Brush.horizontalGradient(listOf(Color(0xFF392752), Color(0xFF241B35), Color(0xFF392752))),
                         RoundedCornerShape(topStart = 17.dp, topEnd = 17.dp)
                     ).padding(horizontal = 11.dp, vertical = 7.dp)) {
@@ -324,6 +327,93 @@ fun EarendelMusic(player: ExoPlayer) {
                 confirmButton = { TextButton(onClick = { addTrackTarget = null }) { Text("Close", color = violet) } },
                 containerColor = panel
             )
+        }
+    }
+}
+
+    if (showNowPlaying) current?.let { track ->
+        Dialog(onDismissRequest = { showNowPlaying = false }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            NowPlayingScreen(
+                track = track, playing = playing, position = position, duration = duration,
+                liked = favorites.any { it.id == track.id },
+                onBack = { showNowPlaying = false },
+                onTogglePlay = { if (player.isPlaying) player.pause() else player.play(); playing = player.isPlaying },
+                onPrevious = { player.seekToPrevious(); playing = true },
+                onNext = { player.seekToNext(); playing = true },
+                onSeek = { position = it; player.seekTo(it.toLong()) },
+                onShuffle = { shuffle = !shuffle; player.shuffleModeEnabled = shuffle },
+                onRepeat = { repeat = !repeat; player.repeatMode = if (repeat) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF },
+                onLike = { toggleLike(track) }, shuffle = shuffle, repeat = repeat
+            )
+        }
+    }
+}
+
+@Composable
+private fun NowPlayingScreen(
+    track: Track, playing: Boolean, position: Float, duration: Float, liked: Boolean,
+    onBack: () -> Unit, onTogglePlay: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit,
+    onSeek: (Float) -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, onLike: () -> Unit,
+    shuffle: Boolean, repeat: Boolean
+) {
+    Box(Modifier.fillMaxSize().background(Color(0xFFD8D5E1)), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 18.dp)
+                .background(Color(0xFF0B0713), RoundedCornerShape(38.dp)).padding(horizontal = 22.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) }
+                Text("Now Playing", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                IconButton(onClick = onRepeat) { Icon(Icons.Default.QueueMusic, null, tint = if (repeat) violet else muted) }
+            }
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().aspectRatio(1f).padding(start = 42.dp).clip(RoundedCornerShape(18.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF282331), Color(0xFF09070D)))), contentAlignment = Alignment.CenterEnd) {
+                    Box(Modifier.fillMaxHeight(.88f).aspectRatio(1f).clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(Brush.radialGradient(listOf(Color(0xFF5C5666), Color(0xFF08080B), Color.Black))),
+                        contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxSize(.28f).clip(androidx.compose.foundation.shape.CircleShape).background(violet.copy(alpha = .65f)))
+                    }
+                }
+                TrackArtwork(track.artworkUrl, Modifier.fillMaxWidth(.72f).aspectRatio(1f), 4.dp)
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(track.title, color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(track.artist, color = muted, fontSize = 12.sp, maxLines = 1)
+                }
+                IconButton(onClick = onLike) { Icon(Icons.Default.Favorite, null, tint = if (liked) violet else Color.White) }
+            }
+            Row(Modifier.fillMaxWidth().height(54.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                val bars = listOf(8,15,22,12,28,18,34,14,25,38,20,30,16,40,24,13,32,19,27,12,35,17,25,10,30,18,37,14,24,11)
+                bars.forEachIndexed { index, h ->
+                    Box(Modifier.weight(1f).padding(horizontal = 1.dp).height(h.dp).clip(RoundedCornerShape(3.dp))
+                        .background(if (index < (if (duration > 0) (position / duration * bars.size).toInt() else 0)) violet else muted.copy(alpha = .7f)))
+                }
+            }
+            Column {
+                Slider(value = if (duration > 0) position.coerceIn(0f, duration) else 0f, onValueChange = onSeek,
+                    valueRange = 0f..duration.coerceAtLeast(1f), colors = SliderDefaults.colors(thumbColor = violet, activeTrackColor = violet, inactiveTrackColor = muted))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(timeLabel(position), color = muted, fontSize = 10.sp)
+                    Text(timeLabel(duration), color = muted, fontSize = 10.sp)
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) violet else Color.White) }
+                IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(30.dp)) }
+                FilledIconButton(onClick = onTogglePlay, modifier = Modifier.size(64.dp), colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFF7041E8))) {
+                    Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                }
+                IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = Color.White, modifier = Modifier.size(30.dp)) }
+                IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) violet else Color.White) }
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.width(54.dp).height(3.dp).clip(RoundedCornerShape(3.dp)).background(violet))
+                Spacer(Modifier.height(8.dp))
+                Text("LYRICS", color = muted, fontSize = 12.sp, letterSpacing = 1.sp)
+            }
         }
     }
 }
