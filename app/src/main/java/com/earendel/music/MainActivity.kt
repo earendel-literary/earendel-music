@@ -619,6 +619,21 @@ private fun HomeScreen(
             HomeAlbumTile("English Afterglow", "ENGLISH POP", Color(0xFF4A4C79), Modifier.weight(1f), null) { onArtist("English pop full songs") }
         }
         Spacer(Modifier.height(20.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("SONGS TO DISCOVER", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("SEARCH & PLAY", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            HomeQuickCard("Oniket Prantor", "Artcell", "♫", Color(0xFF604078), Modifier.weight(1f)) { onArtist("Oniket Prantor Artcell") }
+            HomeQuickCard("Dukkho Bilash", "Artcell", "♫", Color(0xFF3F6661), Modifier.weight(1f)) { onArtist("Dukkho Bilash Artcell") }
+        }
+        Spacer(Modifier.height(9.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            HomeQuickCard("Hashimukh", "Shironamhin", "♫", Color(0xFF755044), Modifier.weight(1f)) { onArtist("Hashimukh Shironamhin") }
+            HomeQuickCard("Cholo Bodle Jai", "LRB", "♫", Color(0xFF465B7C), Modifier.weight(1f)) { onArtist("Cholo Bodle Jai LRB") }
+        }
+        Spacer(Modifier.height(20.dp))
         Box(
             Modifier.fillMaxWidth().height(226.dp).clip(RoundedCornerShape(24.dp))
                 .background(Brush.linearGradient(listOf(Color(0xFF5D3C83), Color(0xFF21172F), Color(0xFF101019))))
