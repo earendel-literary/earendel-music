@@ -348,6 +348,7 @@ fun EarendelMusic(player: ExoPlayer) {
             )
         }
     }
+
 }
 
 @Composable
