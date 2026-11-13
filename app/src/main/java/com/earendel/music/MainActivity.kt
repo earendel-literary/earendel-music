@@ -386,11 +386,14 @@ private fun NowPlayingScreen(
                 }
                 IconButton(onClick = onLike) { Icon(Icons.Default.Favorite, null, tint = if (liked) violet else Color.White) }
             }
-            Row(Modifier.fillMaxWidth().height(54.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().height(54.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
                 val bars = listOf(8,15,22,12,28,18,34,14,25,38,20,30,16,40,24,13,32,19,27,12,35,17,25,10,30,18,37,14,24,11)
-                bars.forEachIndexed { index, h ->
-                    Box(Modifier.weight(1f).padding(horizontal = 1.dp).height(h.dp).clip(RoundedCornerShape(3.dp))
-                        .background(if (index < (if (duration > 0) (position / duration * bars.size).toInt() else 0)) violet else muted.copy(alpha = .7f)))
+                val playedBars = if (duration > 0f) (position / duration * bars.size).toInt() else 0
+                bars.forEachIndexed { index, barHeight ->
+                    Box(
+                        modifier = Modifier.width(3.dp).height(barHeight.dp).clip(RoundedCornerShape(3.dp))
+                            .background(if (index < playedBars) violet else muted.copy(alpha = 0.7f))
+                    )
                 }
             }
             Column {
