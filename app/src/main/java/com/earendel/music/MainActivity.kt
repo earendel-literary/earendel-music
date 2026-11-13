@@ -204,6 +204,7 @@ fun EarendelMusic(player: ExoPlayer) {
                             message = message,
                             loading = loading,
                             onSearch = { tab = "Search" },
+                            onBanglaRock = { homeCollection = "Bangla Rock"; query = "Bangla rock"; search("Bangla rock") },
                             onArtist = { name -> query = name; tab = "Search"; search(name) },
                             onPlay = { play(it, tracks) },
                             onLike = { toggleLike(it) },
@@ -238,7 +239,7 @@ fun EarendelMusic(player: ExoPlayer) {
                 }
 
                 Row(Modifier.fillMaxWidth().background(ink).padding(top = 7.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
-                    BottomItem("Home", Icons.Default.Home, tab == "Home") { tab = "Home" }
+                    BottomItem("Home", Icons.Default.Home, tab == "Home") { tab = "Home"; homeCollection = null }
                     BottomItem("Search", Icons.Default.Search, tab == "Search") { tab = "Search" }
                     BottomItem("Library", Icons.Default.LibraryMusic, tab == "Library") { tab = "Library"; selectedPlaylist = null }
                 }
@@ -294,6 +295,7 @@ private fun HomeScreen(
     message: String,
     loading: Boolean,
     onSearch: () -> Unit,
+    onBanglaRock: () -> Unit,
     onArtist: (String) -> Unit,
     onPlay: (Track) -> Unit,
     onLike: (Track) -> Unit,
@@ -343,7 +345,7 @@ private fun HomeScreen(
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             HomeQuickCard("Liked Songs", "Your favourites", "♥", Color(0xFF7446A6), Modifier.weight(1f)) { onArtist("Bangla alternative rock") }
-            HomeQuickCard("Bangla Rock", "Open songs & artists", "♫", Color(0xFF315C70), Modifier.weight(1f)) { homeCollection = "Bangla Rock"; query = "Bangla rock"; onArtist("Bangla rock") }
+            HomeQuickCard("Bangla Rock", "Open songs & artists", "♫", Color(0xFF315C70), Modifier.weight(1f), onBanglaRock)
         }
         Spacer(Modifier.height(9.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
