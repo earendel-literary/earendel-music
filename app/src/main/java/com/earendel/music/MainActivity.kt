@@ -75,6 +75,7 @@ fun EarendelMusic(player: ExoPlayer) {
     var selectedPlaylist by remember { mutableStateOf<String?>(null) }
     var addTrackTarget by remember { mutableStateOf<Track?>(null) }
     var homeCollection by remember { mutableStateOf<String?>(null) }
+    var isAuthenticated by remember { mutableStateOf(prefs.getBoolean("authenticated", false)) }
     val scope = rememberCoroutineScope()
     val favorites = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "liked")) } }
     val playlists = remember { mutableStateListOf<UserPlaylist>().apply { addAll(readPlaylists(prefs)) } }
@@ -121,7 +122,9 @@ fun EarendelMusic(player: ExoPlayer) {
         }
     }
 
-    MaterialTheme(colorScheme = darkColorScheme(background = ink, surface = panel, primary = violet, onBackground = Color.White, onSurface = Color.White)) {
+    if (!isAuthenticated) {
+        AuthGate(onAuthAttempt = { message = "Authentication needs EARENDEL Firebase project configuration. Add its web API key and Google OAuth client ID to enable secure sign-in." })
+    } else MaterialTheme(colorScheme = darkColorScheme(background = ink, surface = panel, primary = violet, onBackground = Color.White, onSurface = Color.White)) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF241A38), ink, ink)))) {
             Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
                 Spacer(Modifier.height(40.dp))
@@ -283,6 +286,57 @@ fun EarendelMusic(player: ExoPlayer) {
                 confirmButton = { TextButton(onClick = { addTrackTarget = null }) { Text("Close", color = violet) } },
                 containerColor = panel
             )
+        }
+    }
+}
+
+
+@Composable
+private fun AuthGate(onAuthAttempt: () -> Unit) {
+    var page by remember { mutableStateOf("welcome") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var notice by remember { mutableStateOf("") }
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        Box(Modifier.align(Alignment.TopEnd).size(230.dp).background(Brush.radialGradient(listOf(Color(0x553F168C), Color.Transparent))))
+        Box(Modifier.align(Alignment.BottomStart).size(260.dp).background(Brush.radialGradient(listOf(Color(0x553F168C), Color.Transparent))))
+        Column(Modifier.fillMaxSize().padding(horizontal = 28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Box(Modifier.size(126.dp).background(Brush.radialGradient(listOf(Color(0xFF8E46FF), Color(0xFF29134A), Color.Black)), RoundedCornerShape(100)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.GraphicEq, null, tint = Color.White, modifier = Modifier.size(62.dp))
+            }
+            Spacer(Modifier.height(14.dp))
+            Text("E A R E N D E L", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 3.sp)
+            Text("M U S I C  ✦", color = violet, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
+            Spacer(Modifier.height(28.dp))
+            if (page == "welcome") {
+                Text("Millions of songs.", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                Text("Free on EARENDEL.", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(30.dp))
+                Button(onClick = { page = "signup"; notice = "" }, modifier = Modifier.fillMaxWidth().height(52.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF853CFF))) { Text("Sign up free", fontWeight = FontWeight.Bold) }
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = { page = "login"; notice = "" }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Log in", color = Color.White) }
+            } else {
+                Text(if (page == "signup") "Create account" else "Welcome back", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(if (page == "signup") "Join EARENDEL and enjoy music" else "Log in to continue", color = muted, fontSize = 13.sp)
+                Spacer(Modifier.height(24.dp))
+                OutlinedTextField(email, { email = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Gmail or email address") })
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(password, { password = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Password") })
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = { notice = "Secure email authentication is not connected yet. Configure Firebase Authentication to create or access accounts." ; onAuthAttempt() }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF853CFF))) {
+                    Text(if (page == "signup") "Create account" else "Log in")
+                }
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = { notice = "Google sign-in requires the EARENDEL Google OAuth client ID and Firebase configuration."; onAuthAttempt() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                    Text("G  Continue with Google", color = Color.White)
+                }
+                TextButton(onClick = { page = if (page == "signup") "login" else "signup"; notice = "" }) {
+                    Text(if (page == "signup") "Already have an account? Log in" else "New to EARENDEL? Sign up free", color = violet)
+                }
+                if (notice.isNotBlank()) Text(notice, color = Color(0xFFFFC078), fontSize = 11.sp)
+            }
+            Spacer(Modifier.height(18.dp))
+            if (page != "welcome") TextButton(onClick = { page = "welcome"; notice = "" }) { Text("Back", color = muted) }
         }
     }
 }
