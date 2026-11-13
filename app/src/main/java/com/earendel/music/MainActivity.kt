@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.clickable\nimport androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -173,28 +173,18 @@ fun EarendelMusic(player: ExoPlayer) {
                         }
                     }
                     else -> {
-                        Text("Good evening", color = muted, fontSize = 13.sp)
-                        Text("Find your next favourite.", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(16.dp))
-                        SearchBox(query, { query = it }, { tab = "Search"; search(query) })
-                        Spacer(Modifier.height(20.dp))
-                        Text("MADE FOR YOU", color = muted, fontSize = 11.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                            listOf("ASHES", "Artcell", "Highway", "Shonar Bangla Circus").forEach { name ->
-                                Surface(color = panel2, shape = RoundedCornerShape(18.dp), modifier = Modifier.clickable { query = name; tab = "Search"; search(name) }) {
-                                    Text(name, color = Color.White, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp))
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(22.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("DISCOVER MUSIC", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            TextButton(onClick = { tab = "Search" }) { Text("Search all", color = violet) }
-                        }
-                        Text(message, color = muted, fontSize = 12.sp)
-                        if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
-                        TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
+                        HomeScreen(
+                            modifier = Modifier.weight(1f),
+                            tracks = tracks,
+                            favorites = favorites,
+                            message = message,
+                            loading = loading,
+                            onSearch = { tab = "Search" },
+                            onArtist = { name -> query = name; tab = "Search"; search(name) },
+                            onPlay = { play(it, tracks) },
+                            onLike = { toggleLike(it) },
+                            onAdd = { addTrackTarget = it }
+                        )
                     }
                 }
 
@@ -268,6 +258,158 @@ fun EarendelMusic(player: ExoPlayer) {
                 containerColor = panel
             )
         }
+    }
+}
+
+@Composable
+private fun HomeScreen(
+    modifier: Modifier = Modifier,
+    tracks: List<Track>,
+    favorites: List<Track>,
+    message: String,
+    loading: Boolean,
+    onSearch: () -> Unit,
+    onArtist: (String) -> Unit,
+    onPlay: (Track) -> Unit,
+    onLike: (Track) -> Unit,
+    onAdd: (Track) -> Unit
+) {
+    val artists = listOf("ASHES", "ARTCELL", "HIGHWAY", "SHONAR BANGLA CIRCUS")
+    Column(modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(bottom = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("GOOD EVENING", color = violet, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("What sounds good?", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+            }
+            Surface(color = panel2, shape = RoundedCornerShape(50)) {
+                Icon(Icons.Default.NotificationsNone, null, tint = Color.White, modifier = Modifier.padding(11.dp).size(21.dp))
+            }
+        }
+        Spacer(Modifier.height(17.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth().height(184.dp),
+            shape = RoundedCornerShape(25.dp),
+            color = Color(0xFF352052)
+        ) {
+            Box(Modifier.background(Brush.linearGradient(listOf(Color(0xFF7547A9), Color(0xFF352052), Color(0xFF171323)))).padding(19.dp)) {
+                Column(Modifier.align(Alignment.CenterStart)) {
+                    Text("EARENDEL EXCLUSIVE", color = Color(0xFFE4D5FF), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text("Your world.\nYour music.", color = Color.White, fontSize = 27.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold)
+                    Spacer(Modifier.height(12.dp))
+                    Surface(color = Color.White, shape = RoundedCornerShape(30.dp), modifier = Modifier.clickable { onSearch() }) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+                            Icon(Icons.Default.Explore, null, tint = Color(0xFF392052), modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Explore music", color = Color(0xFF392052), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                Box(Modifier.align(Alignment.CenterEnd).size(112.dp).background(Color(0x557F62B5), RoundedCornerShape(28.dp)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.GraphicEq, null, tint = Color(0xFFD8C4FF), modifier = Modifier.size(76.dp))
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("JUMP BACK IN", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("Your picks", color = muted, fontSize = 10.sp)
+        }
+        Spacer(Modifier.height(11.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            HomeQuickCard("Liked Songs", "Your favourites", "♥", Color(0xFF7446A6), Modifier.weight(1f)) { onArtist("Bangla alternative rock") }
+            HomeQuickCard("Bangla Rock", "Guitar & emotion", "♫", Color(0xFF315C70), Modifier.weight(1f)) { onArtist("Bangla rock") }
+        }
+        Spacer(Modifier.height(9.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            HomeQuickCard("Indie Vibes", "Discover something new", "✦", Color(0xFF79513D), Modifier.weight(1f)) { onArtist("Bangla indie") }
+            HomeQuickCard("New Discoveries", "Find your next song", "◉", Color(0xFF465B48), Modifier.weight(1f)) { onSearch() }
+        }
+        Spacer(Modifier.height(22.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("MADE FOR YOU", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("CURATED", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            artists.forEachIndexed { index, name ->
+                Column(Modifier.width(104.dp).clickable { onArtist(name) }, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.size(88.dp).background(
+                        Brush.linearGradient(listOf(
+                            listOf(Color(0xFF9A5C9D), Color(0xFF46306D)),
+                            listOf(Color(0xFF476C82), Color(0xFF1D3048)),
+                            listOf(Color(0xFFB06B4D), Color(0xFF4C2C37)),
+                            listOf(Color(0xFF9A8052), Color(0xFF39304B))
+                        )[index]), RoundedCornerShape(23.dp)), contentAlignment = Alignment.Center) {
+                        Text(name.take(2), color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.ExtraBold)
+                    }
+                    Spacer(Modifier.height(7.dp))
+                    Text(name, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("Bangla artist", color = muted, fontSize = 9.sp)
+                }
+            }
+        }
+        Spacer(Modifier.height(21.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("TRENDING BANGLA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            TextButton(onClick = onSearch) { Text("See all", color = violet, fontSize = 11.sp) }
+        }
+        if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
+        if (tracks.isNotEmpty()) {
+            TrackList(tracks.take(5), favorites, onPlay, onLike, onAdd)
+        } else {
+            Text("Discover Bangla rock, indie and alternative sounds.", color = muted, fontSize = 11.sp)
+            Spacer(Modifier.height(9.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                HomeGenreTile("Alternative", "ALT", Color(0xFF69477F), Modifier.weight(1f)) { onArtist("Bangla alternative") }
+                HomeGenreTile("Acoustic", "AC", Color(0xFF456A68), Modifier.weight(1f)) { onArtist("Bangla acoustic") }
+                HomeGenreTile("Rock", "RK", Color(0xFF8A5946), Modifier.weight(1f)) { onArtist("Bangla rock") }
+            }
+            Text(message, color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
+        }
+        Spacer(Modifier.height(18.dp))
+        Text("YOUR COLLECTION", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(11.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            HomeAlbumTile("Midnight\nMelodies", "MOOD MIX", Color(0xFF4E477F), Modifier.weight(1f)) { onArtist("midnight mellow music") }
+            HomeAlbumTile("Bangla\nUnderground", "LOCAL SOUND", Color(0xFF794A4D), Modifier.weight(1f)) { onArtist("Bangla underground") }
+        }
+        Spacer(Modifier.height(18.dp))
+    }
+}
+
+@Composable
+private fun HomeQuickCard(title: String, subtitle: String, symbol: String, tint: Color, modifier: Modifier, onClick: () -> Unit) {
+    Row(modifier.background(panel, RoundedCornerShape(14.dp)).clickable { onClick() }.padding(9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(43.dp).background(tint, RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
+            Text(symbol, color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(subtitle, color = muted, fontSize = 8.sp, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun HomeGenreTile(title: String, short: String, tint: Color, modifier: Modifier, onClick: () -> Unit) {
+    Column(modifier.background(tint, RoundedCornerShape(14.dp)).clickable { onClick() }.padding(12.dp)) {
+        Text(short, color = Color.White.copy(alpha = .65f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(15.dp))
+        Text(title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun HomeAlbumTile(title: String, label: String, tint: Color, modifier: Modifier, onClick: () -> Unit) {
+    Column(modifier.background(Brush.linearGradient(listOf(tint, panel)), RoundedCornerShape(17.dp)).clickable { onClick() }.padding(13.dp)) {
+        Box(Modifier.fillMaxWidth().height(83.dp).background(Color.White.copy(alpha = .08f), RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Album, null, tint = Color.White.copy(alpha = .8f), modifier = Modifier.size(43.dp))
+        }
+        Spacer(Modifier.height(9.dp))
+        Text(label, color = Color(0xFFD9C8FF), fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, lineHeight = 16.sp)
     }
 }
 
