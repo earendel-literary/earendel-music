@@ -74,6 +74,7 @@ fun EarendelMusic(player: ExoPlayer) {
     var newPlaylistName by remember { mutableStateOf("") }
     var selectedPlaylist by remember { mutableStateOf<String?>(null) }
     var addTrackTarget by remember { mutableStateOf<Track?>(null) }
+    var homeCollection by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val favorites = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "liked")) } }
     val playlists = remember { mutableStateListOf<UserPlaylist>().apply { addAll(readPlaylists(prefs)) } }
@@ -183,7 +184,20 @@ fun EarendelMusic(player: ExoPlayer) {
                         }
                     }
                     else -> {
-                        HomeScreen(
+                        if (homeCollection == "Bangla Rock") {
+                            BanglaRockScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                tracks = tracks,
+                                favorites = favorites,
+                                loading = loading,
+                                message = message,
+                                onBack = { homeCollection = null },
+                                onPlay = { play(it, tracks) },
+                                onLike = { toggleLike(it) },
+                                onAdd = { addTrackTarget = it },
+                                onArtist = { name -> query = name; search(name) }
+                            )
+                        } else HomeScreen(
                             modifier = Modifier.fillMaxSize(),
                             tracks = tracks,
                             favorites = favorites,
@@ -329,7 +343,7 @@ private fun HomeScreen(
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             HomeQuickCard("Liked Songs", "Your favourites", "♥", Color(0xFF7446A6), Modifier.weight(1f)) { onArtist("Bangla alternative rock") }
-            HomeQuickCard("Bangla Rock", "Guitar & emotion", "♫", Color(0xFF315C70), Modifier.weight(1f)) { onArtist("Bangla rock") }
+            HomeQuickCard("Bangla Rock", "Open songs & artists", "♫", Color(0xFF315C70), Modifier.weight(1f)) { homeCollection = "Bangla Rock"; query = "Bangla rock"; onArtist("Bangla rock") }
         }
         Spacer(Modifier.height(9.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -385,7 +399,76 @@ private fun HomeScreen(
             HomeAlbumTile("Midnight\nMelodies", "MOOD MIX", Color(0xFF4E477F), Modifier.weight(1f)) { onArtist("midnight mellow music") }
             HomeAlbumTile("Bangla\nUnderground", "LOCAL SOUND", Color(0xFF794A4D), Modifier.weight(1f)) { onArtist("Bangla underground") }
         }
+        Spacer(Modifier.height(8.dp))
+        Text("MORE TO EXPLORE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(11.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            HomeGenreTile("Bangla Indie", "INDIE", Color(0xFF526C63), Modifier.weight(1f)) { onArtist("Bangla indie") }
+            HomeGenreTile("Hindi Hits", "HINDI", Color(0xFF77523D), Modifier.weight(1f)) { onArtist("Hindi songs") }
+            HomeGenreTile("English Pop", "POP", Color(0xFF4E5480), Modifier.weight(1f)) { onArtist("English pop") }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            HomeGenreTile("Acoustic", "SOFT", Color(0xFF53617B), Modifier.weight(1f)) { onArtist("acoustic songs") }
+            HomeGenreTile("Rock Classics", "ROCK", Color(0xFF785044), Modifier.weight(1f)) { onArtist("rock classics") }
+            HomeGenreTile("Chill Mix", "CHILL", Color(0xFF4E6B70), Modifier.weight(1f)) { onArtist("chill music") }
+        }
         Spacer(Modifier.height(18.dp))
+        Text("BANGLA ARTISTS TO EXPLORE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(10.dp))
+        listOf("ASHES", "Artcell", "Highway", "Shonar Bangla Circus").forEach { artist ->
+            LibraryRow(artist, "Search available online tracks", "♫", Color(0xFF8E77C8)) { onArtist(artist) }
+            Spacer(Modifier.height(7.dp))
+        }
+        Spacer(Modifier.height(18.dp))
+    }
+}
+
+
+@Composable
+private fun BanglaRockScreen(
+    modifier: Modifier,
+    tracks: List<Track>,
+    favorites: List<Track>,
+    loading: Boolean,
+    message: String,
+    onBack: () -> Unit,
+    onPlay: (Track) -> Unit,
+    onLike: (Track) -> Unit,
+    onAdd: (Track) -> Unit,
+    onArtist: (String) -> Unit
+) {
+    Column(modifier.padding(bottom = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) }
+            Column(Modifier.weight(1f)) {
+                Text("BANGLA ROCK", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Bangla bands & alternative sounds", color = muted, fontSize = 11.sp)
+            }
+            Icon(Icons.Default.LibraryMusic, null, tint = violet, modifier = Modifier.size(26.dp))
+        }
+        Spacer(Modifier.height(12.dp))
+        Surface(color = Color(0xFF352052), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text("BANGLA ROCK COLLECTION", color = Color(0xFFE1D2FF), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                Spacer(Modifier.height(6.dp))
+                Text("Guitar, poetry & emotion.", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(5.dp))
+                Text("Search online for tracks by your favourite Bangla bands.", color = muted, fontSize = 11.sp)
+            }
+        }
+        Spacer(Modifier.height(13.dp))
+        Text("BANDS", color = violet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Row(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("ASHES", "Artcell", "Highway", "Shonar Bangla Circus").forEach { artist ->
+                AssistChip(onClick = { onArtist(artist) }, label = { Text(artist) }, colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = panel2))
+            }
+        }
+        Spacer(Modifier.height(13.dp))
+        Text("ONLINE SONG RESULTS", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(message, color = muted, fontSize = 10.sp, modifier = Modifier.padding(vertical = 6.dp))
+        if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
+        TrackList(tracks, favorites, onPlay, onLike, onAdd)
     }
 }
 
