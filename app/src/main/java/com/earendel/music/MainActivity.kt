@@ -599,7 +599,26 @@ private fun HomeScreen(
             HomeAlbumTile("Alternative Pulse", "ALTERNATIVE", Color(0xFF755044), Modifier.width(148.dp), tracks.getOrNull(2)?.artworkUrl) { onArtist("Bangla alternative songs") }
             HomeAlbumTile("Acoustic Sessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.width(148.dp), tracks.getOrNull(3)?.artworkUrl) { onArtist("Bangla acoustic songs") }
         }
-        Spacer(Modifier.height(13.dp))
+        Spacer(Modifier.height(20.dp))
+        Text("BANGLA BAND SPOTLIGHT", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(11.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Artcell Essentials", "ARTCELL", Color(0xFF553D73), Modifier.weight(1f), null) { onArtist("Artcell full songs") }
+            HomeAlbumTile("Asees Collection", "ASEES", Color(0xFF315D62), Modifier.weight(1f), null) { onArtist("Asees band full songs") }
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Shonar Bangla Circus", "SBC", Color(0xFF79513D), Modifier.weight(1f), null) { onArtist("Shonar Bangla Circus full songs") }
+            HomeAlbumTile("Highway Collection", "HIGHWAY", Color(0xFF48577B), Modifier.weight(1f), null) { onArtist("Highway band full songs") }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text("HINDI & ENGLISH MIX", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(11.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Hindi Melodies", "HINDI HITS", Color(0xFF80513E), Modifier.weight(1f), null) { onArtist("Hindi hit songs") }
+            HomeAlbumTile("English Afterglow", "ENGLISH POP", Color(0xFF4A4C79), Modifier.weight(1f), null) { onArtist("English pop full songs") }
+        }
+        Spacer(Modifier.height(20.dp))
         Box(
             Modifier.fillMaxWidth().height(226.dp).clip(RoundedCornerShape(24.dp))
                 .background(Brush.linearGradient(listOf(Color(0xFF5D3C83), Color(0xFF21172F), Color(0xFF101019))))
@@ -782,15 +801,36 @@ private fun TrackArtwork(url: String, modifier: Modifier = Modifier, corner: and
     }
 }
 
+private fun lookupAlbumCover(query: String): String {
+    return try {
+        val encoded = URLEncoder.encode(query, "UTF-8")
+        val request = Request.Builder().url("https://api.deezer.com/search/album?q=$encoded").get().build()
+        OkHttpClient().newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return@use ""
+            val data = JSONObject(response.body?.string().orEmpty()).optJSONArray("data") ?: return@use ""
+            if (data.length() == 0) return@use ""
+            val album = data.getJSONObject(0)
+            album.optString("cover_xl").takeIf { it.startsWith("https://") }
+                ?: album.optString("cover_big").takeIf { it.startsWith("https://") }.orEmpty()
+        }
+    } catch (_: Exception) { "" }
+}
+
 @Composable
 private fun HomeAlbumTile(title: String, label: String, tint: Color, modifier: Modifier, artworkUrl: String? = null, onClick: () -> Unit) {
+    var resolvedArtwork by remember(title, artworkUrl) { mutableStateOf(artworkUrl.orEmpty()) }
+    LaunchedEffect(title, artworkUrl) {
+        if (resolvedArtwork.isBlank()) {
+            resolvedArtwork = withContext(Dispatchers.IO) { lookupAlbumCover(title) }
+        }
+    }
     Column(modifier.animateContentSize(tween(280, easing = FastOutSlowInEasing)).background(Brush.linearGradient(listOf(tint, panel)), RoundedCornerShape(17.dp)).clickable { onClick() }.padding(10.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White.copy(alpha = .08f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-            if (!artworkUrl.isNullOrBlank()) {
-                AsyncImage(model = artworkUrl, contentDescription = "$title cover art", modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
+            if (resolvedArtwork.isNotBlank()) {
+                AsyncImage(model = resolvedArtwork, contentDescription = "$title cover art", modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
             } else {
                 Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(tint, Color(0xFF171323)))), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Album, null, tint = Color.White.copy(alpha = .85f), modifier = Modifier.size(48.dp))
+                    Text(title.split(" ").take(2).joinToString("\n").uppercase(), color = Color.White, fontSize = 17.sp, lineHeight = 19.sp, fontWeight = FontWeight.Black, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
         }
