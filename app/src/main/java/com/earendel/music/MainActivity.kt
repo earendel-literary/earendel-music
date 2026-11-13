@@ -131,6 +131,7 @@ fun EarendelMusic(player: ExoPlayer) {
         player.prepare()
         player.play()
         playing = true
+        showNowPlaying = true
     }
     fun toggleLike(track: Track) {
         if (favorites.any { it.id == track.id }) favorites.removeAll { it.id == track.id } else favorites.add(track)
