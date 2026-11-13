@@ -883,6 +883,11 @@ private fun searchOnline(term: String): List<Track> {
     try { collected.addAll(searchArchive(cleanTerm, 35)) } catch (_: Exception) { }
     if (collected.distinctBy { it.id }.size < 50) {
         val extraQueries = listOf(
+            // Prioritise full-length openly licensed lo-fi and instrumental music.
+            "lofi hip hop", "lo-fi beats", "chillhop", "lofi instrumental",
+            "study beats", "ambient instrumental", "relaxing piano music",
+            "downtempo instrumental", "chill instrumental music",
+            // Keep Bengali and Hindi discovery in the same catalogue.
             "Bangla songs", "Bengali music", "Bengali folk music",
             "Bangla independent music", "Bangla band music",
             "Hindi songs", "Hindi classical music", "Hindi folk music",
