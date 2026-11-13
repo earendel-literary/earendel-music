@@ -85,7 +85,7 @@ fun EarendelMusic(player: ExoPlayer) {
     var playbackQueue by remember { mutableStateOf<List<Track>>(emptyList()) }
     var playing by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("Search for music you can legally stream.") }
+    var message by remember { mutableStateOf("Search free, openly licensed full-length music.") }
     var tab by remember { mutableStateOf("Home") }
     var position by remember { mutableFloatStateOf(0f) }
     var duration by remember { mutableFloatStateOf(0f) }
@@ -108,15 +108,13 @@ fun EarendelMusic(player: ExoPlayer) {
     fun search(term: String) {
         if (term.isBlank()) return
         loading = true
-        message = "Searching licensed audio…"
+        message = "Searching free full-length music…"
         scope.launch {
             try {
                 val found = withContext(Dispatchers.IO) { searchOnline(term) }
                 tracks = found
-                val previews = found.count { it.id.startsWith("apple-") }
-                val licensed = found.size - previews
-                message = if (found.isEmpty()) "No online matches found. Try another spelling or search." else
-                    "$previews catalogue previews (up to 30 seconds) • $licensed openly licensed full-length tracks where available"
+                message = if (found.isEmpty()) "No verified free full-length tracks found. Try another spelling or search." else
+                    "\${found.size} free, openly licensed full-length tracks found. Availability depends on the archive catalogue."
             } catch (_: Exception) {
                 message = "Could not load music. Check your internet connection and try again."
             } finally { loading = false }
@@ -844,6 +842,7 @@ private fun tracksJson(list: List<Track>) = JSONArray().also { arr -> list.forEa
 private fun parseTracks(raw: String?): List<Track> = try {
     val arr = JSONArray(raw ?: "[]")
     (0 until arr.length()).map { i -> arr.getJSONObject(i).let { Track(it.optString("id"), it.optString("title"), it.optString("artist"), it.optString("stream"), it.optString("artworkUrl")) } }
+        .filterNot { it.id.startsWith("apple-") }
 } catch (_: Exception) { emptyList() }
 private fun readTracks(prefs: android.content.SharedPreferences, key: String) = parseTracks(prefs.getString(key, "[]"))
 private fun playlistsJson(list: List<UserPlaylist>) = JSONArray().also { arr -> list.forEach { arr.put(JSONObject().put("name", it.name).put("tracks", JSONArray(tracksJson(it.tracks)))) } }.toString()
@@ -855,58 +854,20 @@ private fun readPlaylists(prefs: android.content.SharedPreferences): List<UserPl
 private fun searchOnline(term: String): List<Track> {
     val cleanTerm = term.trim()
     if (cleanTerm.isBlank()) return emptyList()
-    val apple = try { searchAppleCatalogue(cleanTerm) } catch (_: Exception) { emptyList() }
-    val archive = try { searchArchive(cleanTerm) } catch (_: Exception) { emptyList() }
-    val seen = mutableSetOf<String>()
-    return (apple + archive).filter { track ->
-        val key = track.title.trim().lowercase() + "|" + track.artist.trim().lowercase()
-        seen.add(key)
-    }
-}
-
-private fun searchAppleCatalogue(term: String): List<Track> {
-    val client = OkHttpClient.Builder()
-        .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(18, java.util.concurrent.TimeUnit.SECONDS)
-        .build()
-    val encoded = URLEncoder.encode(term, "UTF-8")
-    val countries = listOf("bd", "in", "us", "gb")
-    val collected = mutableListOf<Track>()
-    for (country in countries) {
-        try {
-            val url = "https://itunes.apple.com/search?term=$encoded&media=music&entity=song&limit=50&country=$country"
-            val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.2").build()
-            val body = client.newCall(req).execute().use { response ->
-                if (!response.isSuccessful) error("Catalogue HTTP " + response.code)
-                response.body?.string() ?: error("Empty catalogue response")
-            }
-            val results = JSONObject(body).optJSONArray("results") ?: JSONArray()
-            for (i in 0 until results.length()) {
-                val item = results.optJSONObject(i) ?: continue
-                val preview = item.optString("previewUrl")
-                val title = item.optString("trackName")
-                val artist = item.optString("artistName", "Unknown artist")
-                val artwork = item.optString("artworkUrl100").replace("100x100bb", "600x600bb")
-                if (preview.isNotBlank() && title.isNotBlank()) {
-                    collected.add(Track("apple-" + item.optString("trackId", "$country-$i"), title, artist, preview, artwork))
-                }
-            }
-            if (collected.size >= 50) break
-        } catch (_: Exception) { }
-    }
-    return collected.distinctBy { it.id }
+    // Apple/iTunes is intentionally excluded because its public endpoint supplies 30-second previews.
+    return try { searchArchive(cleanTerm) } catch (_: Exception) { emptyList() }
 }
 
 private fun searchArchive(term: String): List<Track> {
     val client = OkHttpClient.Builder()
         .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
         .build()
     val safeTerm = term.replace("\\", " ").replace(":", " ").replace("(", " ").replace(")", " ").replace("\"", " ")
     val query = "mediatype:audio AND (title:($safeTerm) OR creator:($safeTerm))"
     val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(query, "UTF-8") +
-        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=15&page=1&output=json"
-    val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.2").build()
+        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=30&page=1&output=json"
+    val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.3").build()
     val body = client.newCall(req).execute().use { response ->
         if (!response.isSuccessful) error("Archive HTTP " + response.code)
         response.body?.string() ?: error("Empty archive response")
@@ -918,32 +879,51 @@ private fun searchArchive(term: String): List<Track> {
         val id = doc.optString("identifier")
         if (id.isBlank()) continue
         try {
-            val metaReq = Request.Builder().url("https://archive.org/metadata/$id").build()
-            val metaBody = client.newCall(metaReq).execute().use { it.body?.string() ?: "" }
+            val metaReq = Request.Builder()
+                .url("https://archive.org/metadata/$id")
+                .header("User-Agent", "EARENDEL-MUSIC/1.3")
+                .build()
+            val metaBody = client.newCall(metaReq).execute().use { response ->
+                if (!response.isSuccessful) "" else response.body?.string() ?: ""
+            }
+            if (metaBody.isBlank()) continue
             val metadata = JSONObject(metaBody)
             val itemMeta = metadata.optJSONObject("metadata") ?: JSONObject()
-            val license = (itemMeta.optString("licenseurl") + " " + itemMeta.optString("rights")).lowercase()
-            val openlyLicensed = license.contains("creativecommons.org") || license.contains("public domain") || license.contains("publicdomain")
+            val licenseUrl = itemMeta.optString("licenseurl").lowercase()
+            val rights = itemMeta.optString("rights").lowercase()
+            // Only accept explicit Creative Commons or Public Domain declarations.
+            val openlyLicensed = licenseUrl.contains("creativecommons.org/licenses/") ||
+                licenseUrl.contains("creativecommons.org/publicdomain/") ||
+                rights.contains("creative commons") || rights.contains("public domain") ||
+                rights.contains("publicdomain")
             if (!openlyLicensed) continue
+
             val files = metadata.optJSONArray("files") ?: continue
             for (j in 0 until files.length()) {
                 val file = files.getJSONObject(j)
                 val name = file.optString("name")
-                if ((name.endsWith(".mp3", true) || name.endsWith(".ogg", true) || name.endsWith(".m4a", true)) &&
-                    file.optString("private") != "true" && file.optString("source") != "metadata") {
-                    val title = doc.optString("title", id).ifBlank { id }
-                    val creatorValue = doc.opt("creator")
-                    val artist = when (creatorValue) {
-                        is JSONArray -> (0 until creatorValue.length()).joinToString(", ") { creatorValue.optString(it) }
-                        is String -> creatorValue
-                        else -> "Internet Archive"
-                    }.ifBlank { "Internet Archive" }
-                    val streamUrl = "https://archive.org/download/" + id + "/" + URLEncoder.encode(name, "UTF-8")
-                    results.add(Track("$id-$name", title, artist, streamUrl))
-                    break
-                }
+                val isAudio = name.endsWith(".mp3", true) || name.endsWith(".ogg", true) ||
+                    name.endsWith(".m4a", true) || name.endsWith(".flac", true) || name.endsWith(".wav", true)
+                if (!isAudio || file.optString("private") == "true" ||
+                    file.optString("source") == "metadata") continue
+
+                // Require a declared duration of at least 90 seconds to exclude previews and clips.
+                val seconds = file.optString("length").toDoubleOrNull() ?: 0.0
+                if (seconds < 90.0) continue
+
+                val title = doc.optString("title", id).ifBlank { id }
+                val creatorValue = doc.opt("creator")
+                val artist = when (creatorValue) {
+                    is JSONArray -> (0 until creatorValue.length()).joinToString(", ") { creatorValue.optString(it) }
+                    is String -> creatorValue
+                    else -> "Independent artist"
+                }.ifBlank { "Independent artist" }
+                val streamUrl = "https://archive.org/download/" + id + "/" + URLEncoder.encode(name, "UTF-8")
+                val artwork = "https://archive.org/services/img/$id"
+                results.add(Track("$id-$name", title, artist, streamUrl, artwork))
+                break
             }
         } catch (_: Exception) { }
     }
-    return results
+    return results.distinctBy { it.title.trim().lowercase() + "|" + it.artist.trim().lowercase() }
 }
