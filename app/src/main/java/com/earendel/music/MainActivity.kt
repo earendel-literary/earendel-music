@@ -113,7 +113,7 @@ fun EarendelMusic(player: ExoPlayer) {
                 val previews = found.count { it.id.startsWith("apple-") }
                 val licensed = found.size - previews
                 message = if (found.isEmpty()) "No online matches found. Try another spelling or search." else
-                    "$previews songs from the online music catalogue (30-second previews) • $licensed licensed full-track files where available"
+                    "$previews catalogue previews (up to 30 seconds) • $licensed openly licensed full-length tracks where available"
             } catch (_: Exception) {
                 message = "Could not load music. Check your internet connection and try again."
             } finally { loading = false }
@@ -179,7 +179,7 @@ fun EarendelMusic(player: ExoPlayer) {
                         Spacer(Modifier.height(12.dp))
                         Text(message, color = muted, fontSize = 12.sp)
                         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
-                        TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
+                        TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it }, modifier = Modifier.weight(1f))
                         }
                     }
                     "Library" -> {
@@ -492,23 +492,11 @@ private fun HomeScreen(
             Text("CURATED", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         }
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            artists.forEachIndexed { index, name ->
-                Column(Modifier.width(104.dp).clickable { onArtist(name) }, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(88.dp).background(
-                        Brush.linearGradient(listOf(
-                            listOf(Color(0xFF9A5C9D), Color(0xFF46306D)),
-                            listOf(Color(0xFF476C82), Color(0xFF1D3048)),
-                            listOf(Color(0xFFB06B4D), Color(0xFF4C2C37)),
-                            listOf(Color(0xFF9A8052), Color(0xFF39304B))
-                        )[index]), RoundedCornerShape(23.dp)), contentAlignment = Alignment.Center) {
-                        Text(name.take(2), color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                    Spacer(Modifier.height(7.dp))
-                    Text(name, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("Explore music", color = muted, fontSize = 9.sp)
-                }
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Bangla Rock Anthems", "BANGLA ROCK", Color(0xFF604078), Modifier.width(148.dp), tracks.getOrNull(0)?.artworkUrl) { onArtist("Bangla rock songs") }
+            HomeAlbumTile("Bangla Indie Stories", "BANGLA INDIE", Color(0xFF3F6661), Modifier.width(148.dp), tracks.getOrNull(1)?.artworkUrl) { onArtist("Bangla indie songs") }
+            HomeAlbumTile("Alternative Pulse", "ALTERNATIVE", Color(0xFF755044), Modifier.width(148.dp), tracks.getOrNull(2)?.artworkUrl) { onArtist("Bangla alternative songs") }
+            HomeAlbumTile("Acoustic Sessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.width(148.dp), tracks.getOrNull(3)?.artworkUrl) { onArtist("Bangla acoustic songs") }
         }
         Spacer(Modifier.height(21.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -687,8 +675,8 @@ private fun SearchBox(query: String, onQuery: (String) -> Unit, onSearch: () -> 
 }
 
 @Composable
-private fun TrackList(itemsList: List<Track>, favorites: List<Track>, onPlay: (Track) -> Unit, onLike: (Track) -> Unit, onAdd: (Track) -> Unit) {
-    LazyColumn(Modifier.fillMaxWidth().heightIn(max = 390.dp), contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+private fun TrackList(itemsList: List<Track>, favorites: List<Track>, onPlay: (Track) -> Unit, onLike: (Track) -> Unit, onAdd: (Track) -> Unit, modifier: Modifier = Modifier.heightIn(max = 390.dp)) {
+    LazyColumn(modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
         items(itemsList, key = { it.id }) { track ->
             Row(Modifier.fillMaxWidth().animateContentSize(tween(220)).background(panel, RoundedCornerShape(14.dp)).clickable { onPlay(track) }.padding(horizontal = 11.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 TrackArtwork(track.artworkUrl, Modifier.size(48.dp), 10.dp)
@@ -765,7 +753,7 @@ private fun searchAppleCatalogue(term: String): List<Track> {
     val collected = mutableListOf<Track>()
     for (country in countries) {
         try {
-            val url = "https://itunes.apple.com/search?term=$encoded&media=music&entity=song&limit=35&country=$country"
+            val url = "https://itunes.apple.com/search?term=$encoded&media=music&entity=song&limit=50&country=$country"
             val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.2").build()
             val body = client.newCall(req).execute().use { response ->
                 if (!response.isSuccessful) error("Catalogue HTTP " + response.code)
@@ -782,7 +770,7 @@ private fun searchAppleCatalogue(term: String): List<Track> {
                     collected.add(Track("apple-" + item.optString("trackId", "$country-$i"), title, artist, preview, artwork))
                 }
             }
-            if (collected.size >= 25) break
+            if (collected.size >= 50) break
         } catch (_: Exception) { }
     }
     return collected.distinctBy { it.id }
@@ -794,9 +782,9 @@ private fun searchArchive(term: String): List<Track> {
         .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
         .build()
     val safeTerm = term.replace("\\", " ").replace(":", " ").replace("(", " ").replace(")", " ").replace("\"", " ")
-    val query = "mediatype:audio AND licenseurl:*creativecommons.org* AND (title:($safeTerm) OR creator:($safeTerm))"
+    val query = "mediatype:audio AND (title:($safeTerm) OR creator:($safeTerm))"
     val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(query, "UTF-8") +
-        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=25&page=1&output=json"
+        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=15&page=1&output=json"
     val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.2").build()
     val body = client.newCall(req).execute().use { response ->
         if (!response.isSuccessful) error("Archive HTTP " + response.code)
@@ -811,12 +799,17 @@ private fun searchArchive(term: String): List<Track> {
         try {
             val metaReq = Request.Builder().url("https://archive.org/metadata/$id").build()
             val metaBody = client.newCall(metaReq).execute().use { it.body?.string() ?: "" }
-            val files = JSONObject(metaBody).optJSONArray("files") ?: continue
+            val metadata = JSONObject(metaBody)
+            val itemMeta = metadata.optJSONObject("metadata") ?: JSONObject()
+            val license = (itemMeta.optString("licenseurl") + " " + itemMeta.optString("rights")).lowercase()
+            val openlyLicensed = license.contains("creativecommons.org") || license.contains("public domain") || license.contains("publicdomain")
+            if (!openlyLicensed) continue
+            val files = metadata.optJSONArray("files") ?: continue
             for (j in 0 until files.length()) {
                 val file = files.getJSONObject(j)
                 val name = file.optString("name")
                 if ((name.endsWith(".mp3", true) || name.endsWith(".ogg", true) || name.endsWith(".m4a", true)) &&
-                    file.optString("private") != "true") {
+                    file.optString("private") != "true" && file.optString("source") != "metadata") {
                     val title = doc.optString("title", id).ifBlank { id }
                     val creatorValue = doc.opt("creator")
                     val artist = when (creatorValue) {
