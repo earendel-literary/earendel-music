@@ -190,7 +190,7 @@ fun EarendelMusic(player: ExoPlayer) {
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = violet)
                         ) {
-                            Icon(Icons.Default.YouTube, contentDescription = null)
+                            Icon(Icons.Default.PlayCircleFilled, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text("Find full songs on YouTube")
                         }
