@@ -863,11 +863,22 @@ private fun searchArchive(term: String): List<Track> {
         .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
         .build()
-    val safeTerm = term.replace("\\", " ").replace(":", " ").replace("(", " ").replace(")", " ").replace("\"", " ")
-    val query = "mediatype:audio AND (title:($safeTerm) OR creator:($safeTerm))"
+
+    // Search each meaningful word independently; a phrase-only query was too restrictive.
+    val terms = term.trim().split(Regex("\\s+"))
+        .map { it.replace(Regex("[^\\p{L}\\p{N}_-]"), "") }
+        .filter { it.length >= 2 }
+        .distinct()
+        .take(6)
+    if (terms.isEmpty()) return emptyList()
+
+    val termQuery = terms.joinToString(" OR ") { word ->
+        "(title:$word OR creator:$word OR subject:$word)"
+    }
+    val query = "mediatype:audio AND ($termQuery)"
     val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(query, "UTF-8") +
-        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=30&page=1&output=json"
-    val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.3").build()
+        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=60&page=1&output=json"
+    val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.4").build()
     val body = client.newCall(req).execute().use { response ->
         if (!response.isSuccessful) error("Archive HTTP " + response.code)
         response.body?.string() ?: error("Empty archive response")
@@ -881,7 +892,7 @@ private fun searchArchive(term: String): List<Track> {
         try {
             val metaReq = Request.Builder()
                 .url("https://archive.org/metadata/$id")
-                .header("User-Agent", "EARENDEL-MUSIC/1.3")
+                .header("User-Agent", "EARENDEL-MUSIC/1.4")
                 .build()
             val metaBody = client.newCall(metaReq).execute().use { response ->
                 if (!response.isSuccessful) "" else response.body?.string() ?: ""
@@ -891,7 +902,7 @@ private fun searchArchive(term: String): List<Track> {
             val itemMeta = metadata.optJSONObject("metadata") ?: JSONObject()
             val licenseUrl = itemMeta.optString("licenseurl").lowercase()
             val rights = itemMeta.optString("rights").lowercase()
-            // Only accept explicit Creative Commons or Public Domain declarations.
+            // Keep only items whose uploader explicitly declares a CC or public-domain licence.
             val openlyLicensed = licenseUrl.contains("creativecommons.org/licenses/") ||
                 licenseUrl.contains("creativecommons.org/publicdomain/") ||
                 rights.contains("creative commons") || rights.contains("public domain") ||
@@ -907,8 +918,18 @@ private fun searchArchive(term: String): List<Track> {
                 if (!isAudio || file.optString("private") == "true" ||
                     file.optString("source") == "metadata") continue
 
-                // Require a declared duration of at least 90 seconds to exclude previews and clips.
-                val seconds = file.optString("length").toDoubleOrNull() ?: 0.0
+                val rawLength = file.optString("length")
+                val seconds = rawLength.toDoubleOrNull() ?: run {
+                    val parts = rawLength.split(":")
+                    if (parts.size in 2..3) {
+                        parts.mapNotNull { it.toDoubleOrNull() }.let { values ->
+                            if (values.size == parts.size) values.reversed().mapIndexed { index, value ->
+                                value * when (index) { 0 -> 1.0; 1 -> 60.0; else -> 3600.0 }
+                            }.sum() else 0.0
+                        }
+                    } else 0.0
+                }
+                // Exclude short previews and clips.
                 if (seconds < 90.0) continue
 
                 val title = doc.optString("title", id).ifBlank { id }
