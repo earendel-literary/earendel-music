@@ -4,14 +4,44 @@
     "project_id": "earendel-music",
     "storage_bucket": "earendel-music.firebasestorage.app"
   },
-  "client": [{
-    "client_info": {
-      "mobilesdk_app_id": "1:986797876588:android:1cea66e233158f41c23f49",
-      "android_client_info": { "package_name": "com.earendel.music" }
-    },
-    "oauth_client": [],
-    "api_key": [{ "current_key": "AIzaSyCGU0PsF9gVjtdu06AA6uTVLYWkPdGPivI" }],
-    "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
-  }],
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:986797876588:android:1cea66e233158f41c23f49",
+        "android_client_info": {
+          "package_name": "com.earendel.music"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "986797876588-i8h6l4f1ntgbe69u6un4hg2tl0bm3ck6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.earendel.music",
+            "certificate_hash": "22d56b8f2a2164f04d68a7f61dc6b747c8509c28"
+          }
+        },
+        {
+          "client_id": "986797876588-4hiuqho7287qjrmpjm2ulbimd4u14agm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGU0PsF9gVjtdu06AA6uTVLYWkPdGPivI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "986797876588-4hiuqho7287qjrmpjm2ulbimd4u14agm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
   "configuration_version": "1"
 }
