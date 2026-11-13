@@ -1,6 +1,8 @@
 package com.earendel.music
 
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CustomCredential
@@ -178,7 +180,22 @@ fun EarendelMusic(player: ExoPlayer) {
                         Text("Search", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(14.dp))
                         SearchBox(query, { query = it }, { search(query) })
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                val songQuery = query.trim().ifBlank { "Bangla English Hindi full songs" }
+                                val url = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(songQuery, "UTF-8")
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = violet)
+                        ) {
+                            Icon(Icons.Default.YouTube, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Find full songs on YouTube")
+                        }
+                        Text("Official uploads open in YouTube. In-app playback is shown only for tracks with a permitted stream.", color = muted, fontSize = 10.sp)
+                        Spacer(Modifier.height(10.dp))
                         Text(message, color = muted, fontSize = 12.sp)
                         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
                         TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it }, modifier = Modifier.weight(1f))
