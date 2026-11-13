@@ -136,7 +136,7 @@ fun EarendelMusic(player: ExoPlayer) {
             playing = player.isPlaying
             val queueIndex = player.currentMediaItemIndex
             if (queueIndex in playbackQueue.indices) current = playbackQueue[queueIndex]
-            duration = player.duration.coerceAtLeast(0L).toFloat
+            duration = player.duration.coerceAtLeast(0L).toFloat()
             position = player.currentPosition.coerceAtLeast(0L).toFloat()
             delay(500)
         }
