@@ -384,6 +384,14 @@ private fun AuthGate(onAuthenticated: () -> Unit) {
             Spacer(Modifier.height(18.dp))
             if (page != "welcome") TextButton(onClick = { page = "welcome"; notice = "" }) { Text("Back", color = muted) }
         }
+        Text(
+            "EARENDEL  by  NAYEEM EVAN",
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
+            color = Color(0xFF777080),
+            fontSize = 9.sp,
+            letterSpacing = 1.1.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
