@@ -926,11 +926,21 @@ private fun readPlaylists(prefs: android.content.SharedPreferences): List<UserPl
 private fun searchOnline(term: String): List<Track> {
     val cleanTerm = term.trim()
     if (cleanTerm.isBlank()) return emptyList()
-    // Apple/iTunes is intentionally excluded because its public endpoint supplies 30-second previews.
-    return try { searchArchive(cleanTerm) } catch (_: Exception) { emptyList() }
+    // Only full-length tracks whose uploader declares a Creative Commons or public-domain licence
+    // are streamed in EARENDEL's own player. Broaden discovery across genres when a search is sparse.
+    val collected = mutableListOf<Track>()
+    try { collected.addAll(searchArchive(cleanTerm, 24)) } catch (_: Exception) { }
+    if (collected.size < 8) {
+        val extraQueries = listOf("Bengali folk music", "Bangla independent music", "Hindi classical music", "English folk music")
+        for (extra in extraQueries) {
+            if (collected.size >= 24) break
+            try { collected.addAll(searchArchive(extra, 12)) } catch (_: Exception) { }
+        }
+    }
+    return collected.distinctBy { it.id }.take(30)
 }
 
-private fun searchArchive(term: String): List<Track> {
+private fun searchArchive(term: String, maxResults: Int = 60): List<Track> {
     val client = OkHttpClient.Builder()
         .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
@@ -949,7 +959,7 @@ private fun searchArchive(term: String): List<Track> {
     }
     val query = "mediatype:audio AND ($termQuery)"
     val url = "https://archive.org/advancedsearch.php?q=" + URLEncoder.encode(query, "UTF-8") +
-        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=60&page=1&output=json"
+        "&fl[]=identifier&fl[]=title&fl[]=creator&rows=$maxResults&page=1&output=json"
     val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.4").build()
     val body = client.newCall(req).execute().use { response ->
         if (!response.isSuccessful) error("Archive HTTP " + response.code)
