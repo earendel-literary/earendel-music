@@ -330,7 +330,6 @@ fun EarendelMusic(player: ExoPlayer) {
             )
         }
     }
-}
 
     if (showNowPlaying) current?.let { track ->
         Dialog(onDismissRequest = { showNowPlaying = false }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
