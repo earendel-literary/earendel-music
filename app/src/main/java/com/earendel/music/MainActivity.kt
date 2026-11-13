@@ -13,6 +13,9 @@ import com.google.firebase.auth.GoogleAuthProvider
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
@@ -155,11 +158,18 @@ fun EarendelMusic(player: ExoPlayer) {
                         Text("EARENDEL", color = violet, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
                         Text("MUSIC", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp)
                     }
-                    Icon(Icons.Default.GraphicEq, null, tint = violet, modifier = Modifier.size(32.dp))
+                    val logoPulse = rememberInfiniteTransition(label = "logoPulse").animateFloat(
+                        initialValue = 0.92f, targetValue = 1.08f,
+                        animationSpec = infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                        label = "logoScale"
+                    )
+                    Icon(Icons.Default.GraphicEq, null, tint = violet, modifier = Modifier.size(32.dp).graphicsLayer {
+                        scaleX = logoPulse.value; scaleY = logoPulse.value
+                    })
                 }
                 Spacer(Modifier.height(18.dp))
 
-                Box(Modifier.weight(1f).fillMaxWidth()) {
+                Box(Modifier.weight(1f).fillMaxWidth().animateContentSize(tween(350, easing = FastOutSlowInEasing))) {
                 when (tab) {
                     "Search" -> {
                         Column(Modifier.fillMaxSize()) {
@@ -240,7 +250,10 @@ fun EarendelMusic(player: ExoPlayer) {
                 }
 
                 current?.let { track ->
-                    Column(Modifier.fillMaxWidth().background(Color(0xFF302344), RoundedCornerShape(topStart = 17.dp, topEnd = 17.dp)).padding(horizontal = 11.dp, vertical = 7.dp)) {
+                    Column(Modifier.fillMaxWidth().animateContentSize(tween(300, easing = FastOutSlowInEasing)).background(
+                        Brush.horizontalGradient(listOf(Color(0xFF392752), Color(0xFF241B35), Color(0xFF392752))),
+                        RoundedCornerShape(topStart = 17.dp, topEnd = 17.dp)
+                    ).padding(horizontal = 11.dp, vertical = 7.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TrackArtwork(track.artworkUrl, Modifier.size(48.dp), 10.dp)
                             Spacer(Modifier.width(10.dp))
@@ -647,7 +660,7 @@ private fun TrackArtwork(url: String, modifier: Modifier = Modifier, corner: and
 
 @Composable
 private fun HomeAlbumTile(title: String, label: String, tint: Color, modifier: Modifier, artworkUrl: String? = null, onClick: () -> Unit) {
-    Column(modifier.background(Brush.linearGradient(listOf(tint, panel)), RoundedCornerShape(17.dp)).clickable { onClick() }.padding(10.dp)) {
+    Column(modifier.animateContentSize(tween(280, easing = FastOutSlowInEasing)).background(Brush.linearGradient(listOf(tint, panel)), RoundedCornerShape(17.dp)).clickable { onClick() }.padding(10.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White.copy(alpha = .08f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
             if (!artworkUrl.isNullOrBlank()) {
                 AsyncImage(model = artworkUrl, contentDescription = "$title cover art", modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
@@ -677,7 +690,7 @@ private fun SearchBox(query: String, onQuery: (String) -> Unit, onSearch: () -> 
 private fun TrackList(itemsList: List<Track>, favorites: List<Track>, onPlay: (Track) -> Unit, onLike: (Track) -> Unit, onAdd: (Track) -> Unit) {
     LazyColumn(Modifier.fillMaxWidth().heightIn(max = 390.dp), contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
         items(itemsList, key = { it.id }) { track ->
-            Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(14.dp)).clickable { onPlay(track) }.padding(horizontal = 11.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().animateContentSize(tween(220)).background(panel, RoundedCornerShape(14.dp)).clickable { onPlay(track) }.padding(horizontal = 11.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 TrackArtwork(track.artworkUrl, Modifier.size(48.dp), 10.dp)
                 Spacer(Modifier.width(11.dp))
                 Column(Modifier.weight(1f)) {
