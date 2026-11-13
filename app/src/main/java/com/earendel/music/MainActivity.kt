@@ -87,9 +87,12 @@ fun EarendelMusic(player: ExoPlayer) {
         message = "Searching licensed audio…"
         scope.launch {
             try {
-                val found = withContext(Dispatchers.IO) { searchArchive(term) }
+                val found = withContext(Dispatchers.IO) { searchOnline(term) }
                 tracks = found
-                message = if (found.isEmpty()) "No matching Creative Commons audio found. Try another search." else "${found.size} tracks found"
+                val previews = found.count { it.id.startsWith("apple-") }
+                val licensed = found.size - previews
+                message = if (found.isEmpty()) "No online matches found. Try another spelling or search." else
+                    "$previews songs from the online music catalogue (30-second previews) • $licensed licensed full-track files where available"
             } catch (_: Exception) {
                 message = "Could not load music. Check your internet connection and try again."
             } finally { loading = false }
@@ -487,6 +490,36 @@ private fun readPlaylists(prefs: android.content.SharedPreferences): List<UserPl
     val arr = JSONArray(prefs.getString("playlists", "[]"))
     (0 until arr.length()).map { i -> arr.getJSONObject(i).let { UserPlaylist(it.optString("name"), parseTracks(it.optJSONArray("tracks")?.toString())) } }
 } catch (_: Exception) { emptyList() }
+
+private fun searchOnline(term: String): List<Track> {
+    val apple = try { searchAppleCatalogue(term) } catch (_: Exception) { emptyList() }
+    val archive = try { searchArchive(term) } catch (_: Exception) { emptyList() }
+    val seen = mutableSetOf<String>()
+    return (apple + archive).filter { track ->
+        val key = (track.title.trim().lowercase() + "|" + track.artist.trim().lowercase())
+        seen.add(key)
+    }
+}
+
+private fun searchAppleCatalogue(term: String): List<Track> {
+    val client = OkHttpClient.Builder()
+        .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
+    val encoded = URLEncoder.encode(term, "UTF-8")
+    val url = "https://itunes.apple.com/search?term=$encoded&media=music&entity=song&limit=30&country=bd"
+    val req = Request.Builder().url(url).header("User-Agent", "EARENDEL-MUSIC/1.1").build()
+    val body = client.newCall(req).execute().use { it.body?.string() ?: error("Empty catalogue response") }
+    val results = JSONObject(body).optJSONArray("results") ?: JSONArray()
+    return (0 until results.length()).mapNotNull { i ->
+        val item = results.optJSONObject(i) ?: return@mapNotNull null
+        val preview = item.optString("previewUrl")
+        val title = item.optString("trackName")
+        val artist = item.optString("artistName", "Unknown artist")
+        if (preview.isBlank() || title.isBlank()) null
+        else Track("apple-" + item.optString("trackId", i.toString()), title, artist, preview)
+    }
+}
 
 private fun searchArchive(term: String): List<Track> {
     val client = OkHttpClient()
