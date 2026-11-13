@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import coil.compose.AsyncImage
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +48,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 
-data class Track(val id: String, val title: String, val artist: String, val stream: String)
+data class Track(val id: String, val title: String, val artist: String, val stream: String, val artworkUrl: String = "")
 data class UserPlaylist(val name: String, val tracks: List<Track>)
 
 class MainActivity : ComponentActivity() {
@@ -74,6 +75,7 @@ fun EarendelMusic(player: ExoPlayer) {
     var query by remember { mutableStateOf("") }
     var tracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var current by remember { mutableStateOf<Track?>(null) }
+    var playbackQueue by remember { mutableStateOf<List<Track>>(emptyList()) }
     var playing by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("Search for music you can legally stream.") }
@@ -113,9 +115,11 @@ fun EarendelMusic(player: ExoPlayer) {
         }
     }
     fun play(track: Track, list: List<Track> = tracks) {
+        val selectedQueue = (list.ifEmpty { listOf(track) })
+        playbackQueue = selectedQueue
         current = track
-        val queue = (list.ifEmpty { listOf(track) }).map { MediaItem.fromUri(it.stream) }
-        player.setMediaItems(queue, (list.ifEmpty { listOf(track) }).indexOfFirst { it.id == track.id }.coerceAtLeast(0), 0L)
+        val queue = selectedQueue.map { MediaItem.fromUri(it.stream) }
+        player.setMediaItems(queue, selectedQueue.indexOfFirst { it.id == track.id }.coerceAtLeast(0), 0L)
         player.prepare()
         player.play()
         playing = true
@@ -128,11 +132,15 @@ fun EarendelMusic(player: ExoPlayer) {
     LaunchedEffect(player) {
         while (true) {
             playing = player.isPlaying
-            duration = player.duration.coerceAtLeast(0L).toFloat()
+            val queueIndex = player.currentMediaItemIndex
+            if (queueIndex in playbackQueue.indices) current = playbackQueue[queueIndex]
+            duration = player.duration.coerceAtLeast(0L).toFloat
             position = player.currentPosition.coerceAtLeast(0L).toFloat()
             delay(500)
         }
     }
+
+    LaunchedEffect(isAuthenticated) { if (isAuthenticated && tracks.isEmpty() && !loading) search("Bangla music") }
 
     if (!isAuthenticated) {
         AuthGate(onAuthenticated = { isAuthenticated = true })
@@ -230,11 +238,14 @@ fun EarendelMusic(player: ExoPlayer) {
                 }
 
                 current?.let { track ->
-                    Column(Modifier.fillMaxWidth().background(Color(0xFF302344), RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp)).padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    Column(Modifier.fillMaxWidth().background(Color(0xFF302344), RoundedCornerShape(topStart = 17.dp, topEnd = 17.dp)).padding(horizontal = 11.dp, vertical = 7.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            TrackArtwork(track.artworkUrl, Modifier.size(48.dp), 10.dp)
+                            Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(track.title, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 13.sp)
-                                Text(track.artist, color = muted, fontSize = 11.sp, maxLines = 1)
+                                Text(track.title, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 12.sp)
+                                Text(track.artist, color = muted, fontSize = 10.sp, maxLines = 1)
+                                Text(if (playing) "NOW PLAYING" else "PAUSED", color = violet, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                             }
                             IconButton(onClick = { toggleLike(track) }) { Icon(Icons.Default.Favorite, null, tint = if (favorites.any { it.id == track.id }) violet else muted) }
                             IconButton(onClick = { player.seekToPrevious(); playing = true }) { Icon(Icons.Default.SkipPrevious, null, tint = Color.White) }
@@ -509,21 +520,21 @@ private fun HomeScreen(
         }
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Bangla Rock\nAnthems", "BANGLA ROCK", Color(0xFF604078), Modifier.weight(1f)) { onArtist("Bangla rock songs") }
-            HomeAlbumTile("Bangla Indie\nDiscoveries", "BANGLA INDIE", Color(0xFF3F6661), Modifier.weight(1f)) { onArtist("Bangla indie songs") }
+            HomeAlbumTile("Bangla Rock\nAnthems", "BANGLA ROCK", Color(0xFF604078), Modifier.weight(1f), tracks.getOrNull(0)?.artworkUrl) { onArtist("Bangla rock songs") }
+            HomeAlbumTile("Bangla Indie\nDiscoveries", "BANGLA INDIE", Color(0xFF3F6661), Modifier.weight(1f), tracks.getOrNull(1)?.artworkUrl) { onArtist("Bangla indie songs") }
         }
         Spacer(Modifier.height(9.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Modern Bangla\nMelodies", "MODERN", Color(0xFF755044), Modifier.weight(1f)) { onArtist("modern Bangla songs") }
-            HomeAlbumTile("Acoustic Bangla\nSessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.weight(1f)) { onArtist("Bangla acoustic songs") }
+            HomeAlbumTile("Modern Bangla\nMelodies", "MODERN", Color(0xFF755044), Modifier.weight(1f), tracks.getOrNull(2)?.artworkUrl) { onArtist("modern Bangla songs") }
+            HomeAlbumTile("Acoustic Bangla\nSessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.weight(1f), tracks.getOrNull(3)?.artworkUrl) { onArtist("Bangla acoustic songs") }
         }
         Text("Tap an album to search its songs online. Available tracks depend on the music catalogue.", color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(18.dp))
         Text("YOUR COLLECTION", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-            HomeAlbumTile("Midnight\nMelodies", "MOOD MIX", Color(0xFF4E477F), Modifier.weight(1f)) { onArtist("midnight mellow music") }
-            HomeAlbumTile("Bangla\nUnderground", "LOCAL SOUND", Color(0xFF794A4D), Modifier.weight(1f)) { onArtist("Bangla underground") }
+            HomeAlbumTile("Midnight\nMelodies", "MOOD MIX", Color(0xFF4E477F), Modifier.weight(1f), tracks.getOrNull(4)?.artworkUrl) { onArtist("midnight mellow music") }
+            HomeAlbumTile("Bangla\nUnderground", "LOCAL SOUND", Color(0xFF794A4D), Modifier.weight(1f), tracks.getOrNull(5)?.artworkUrl) { onArtist("Bangla underground") }
         }
         Spacer(Modifier.height(8.dp))
         Text("MORE TO EXPLORE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
@@ -622,10 +633,27 @@ private fun HomeGenreTile(title: String, short: String, tint: Color, modifier: M
 }
 
 @Composable
-private fun HomeAlbumTile(title: String, label: String, tint: Color, modifier: Modifier, onClick: () -> Unit) {
-    Column(modifier.background(Brush.linearGradient(listOf(tint, panel)), RoundedCornerShape(17.dp)).clickable { onClick() }.padding(13.dp)) {
-        Box(Modifier.fillMaxWidth().height(83.dp).background(Color.White.copy(alpha = .08f), RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Album, null, tint = Color.White.copy(alpha = .8f), modifier = Modifier.size(43.dp))
+private fun TrackArtwork(url: String, modifier: Modifier = Modifier, corner: androidx.compose.ui.unit.Dp = 10.dp) {
+    Box(modifier.background(Color(0xFF35264D), RoundedCornerShape(corner)), contentAlignment = Alignment.Center) {
+        if (url.isNotBlank()) {
+            AsyncImage(model = url, contentDescription = "Song cover art", modifier = Modifier.fillMaxSize())
+        } else {
+            Icon(Icons.Default.MusicNote, null, tint = violet, modifier = Modifier.size(25.dp))
+        }
+    }
+}
+
+@Composable
+private fun HomeAlbumTile(title: String, label: String, tint: Color, modifier: Modifier, artworkUrl: String? = null, onClick: () -> Unit) {
+    Column(modifier.background(Brush.linearGradient(listOf(tint, panel)), RoundedCornerShape(17.dp)).clickable { onClick() }.padding(10.dp)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White.copy(alpha = .08f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            if (!artworkUrl.isNullOrBlank()) {
+                AsyncImage(model = artworkUrl, contentDescription = "$title cover art", modifier = Modifier.fillMaxSize())
+            } else {
+                Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(tint, Color(0xFF171323)))), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Album, null, tint = Color.White.copy(alpha = .85f), modifier = Modifier.size(48.dp))
+                }
+            }
         }
         Spacer(Modifier.height(9.dp))
         Text(label, color = Color(0xFFD9C8FF), fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -648,7 +676,7 @@ private fun TrackList(itemsList: List<Track>, favorites: List<Track>, onPlay: (T
     LazyColumn(Modifier.fillMaxWidth().heightIn(max = 390.dp), contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
         items(itemsList, key = { it.id }) { track ->
             Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(14.dp)).clickable { onPlay(track) }.padding(horizontal = 11.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(43.dp).background(Color(0xFF35264D), RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = violet) }
+                TrackArtwork(track.artworkUrl, Modifier.size(48.dp), 10.dp)
                 Spacer(Modifier.width(11.dp))
                 Column(Modifier.weight(1f)) {
                     Text(track.title, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, fontSize = 13.sp)
@@ -687,11 +715,11 @@ private fun timeLabel(ms: Float): String {
     val total = (ms / 1000).toInt().coerceAtLeast(0)
     return "%d:%02d".format(total / 60, total % 60)
 }
-private fun trackJson(track: Track) = JSONObject().put("id", track.id).put("title", track.title).put("artist", track.artist).put("stream", track.stream)
+private fun trackJson(track: Track) = JSONObject().put("id", track.id).put("title", track.title).put("artist", track.artist).put("stream", track.stream).put("artworkUrl", track.artworkUrl)
 private fun tracksJson(list: List<Track>) = JSONArray().also { arr -> list.forEach { arr.put(trackJson(it)) } }.toString()
 private fun parseTracks(raw: String?): List<Track> = try {
     val arr = JSONArray(raw ?: "[]")
-    (0 until arr.length()).map { i -> arr.getJSONObject(i).let { Track(it.optString("id"), it.optString("title"), it.optString("artist"), it.optString("stream")) } }
+    (0 until arr.length()).map { i -> arr.getJSONObject(i).let { Track(it.optString("id"), it.optString("title"), it.optString("artist"), it.optString("stream"), it.optString("artworkUrl")) } }
 } catch (_: Exception) { emptyList() }
 private fun readTracks(prefs: android.content.SharedPreferences, key: String) = parseTracks(prefs.getString(key, "[]"))
 private fun playlistsJson(list: List<UserPlaylist>) = JSONArray().also { arr -> list.forEach { arr.put(JSONObject().put("name", it.name).put("tracks", JSONArray(tracksJson(it.tracks)))) } }.toString()
@@ -734,8 +762,9 @@ private fun searchAppleCatalogue(term: String): List<Track> {
                 val preview = item.optString("previewUrl")
                 val title = item.optString("trackName")
                 val artist = item.optString("artistName", "Unknown artist")
+                val artwork = item.optString("artworkUrl100").replace("100x100bb", "600x600bb")
                 if (preview.isNotBlank() && title.isNotBlank()) {
-                    collected.add(Track("apple-" + item.optString("trackId", "$country-$i"), title, artist, preview))
+                    collected.add(Track("apple-" + item.optString("trackId", "$country-$i"), title, artist, preview, artwork))
                 }
             }
             if (collected.size >= 25) break
