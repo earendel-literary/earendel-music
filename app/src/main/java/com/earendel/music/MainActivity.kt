@@ -28,6 +28,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -636,7 +638,7 @@ private fun HomeGenreTile(title: String, short: String, tint: Color, modifier: M
 private fun TrackArtwork(url: String, modifier: Modifier = Modifier, corner: androidx.compose.ui.unit.Dp = 10.dp) {
     Box(modifier.background(Color(0xFF35264D), RoundedCornerShape(corner)), contentAlignment = Alignment.Center) {
         if (url.isNotBlank()) {
-            AsyncImage(model = url, contentDescription = "Song cover art", modifier = Modifier.fillMaxSize())
+            AsyncImage(model = url, contentDescription = "Song cover art", modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(corner)), contentScale = ContentScale.Crop)
         } else {
             Icon(Icons.Default.MusicNote, null, tint = violet, modifier = Modifier.size(25.dp))
         }
@@ -648,7 +650,7 @@ private fun HomeAlbumTile(title: String, label: String, tint: Color, modifier: M
     Column(modifier.background(Brush.linearGradient(listOf(tint, panel)), RoundedCornerShape(17.dp)).clickable { onClick() }.padding(10.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).background(Color.White.copy(alpha = .08f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
             if (!artworkUrl.isNullOrBlank()) {
-                AsyncImage(model = artworkUrl, contentDescription = "$title cover art", modifier = Modifier.fillMaxSize())
+                AsyncImage(model = artworkUrl, contentDescription = "$title cover art", modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
             } else {
                 Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(tint, Color(0xFF171323)))), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Album, null, tint = Color.White.copy(alpha = .85f), modifier = Modifier.size(48.dp))
