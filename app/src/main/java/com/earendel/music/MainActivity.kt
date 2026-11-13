@@ -885,6 +885,7 @@ private fun searchOnline(term: String): List<Track> {
         val extraQueries = listOf(
             // Prioritise full-length openly licensed lo-fi and instrumental music.
             "lofi hip hop", "lo-fi beats", "chillhop", "lofi instrumental",
+            "Purrple Cat lofi", "Holizna lo-fi beats", "lofi chill beats",
             "study beats", "ambient instrumental", "relaxing piano music",
             "downtempo instrumental", "chill instrumental music",
             // Keep Bengali and Hindi discovery in the same catalogue.
