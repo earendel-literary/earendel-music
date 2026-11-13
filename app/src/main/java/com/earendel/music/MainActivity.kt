@@ -319,9 +319,9 @@ private fun AuthGate(onAuthAttempt: () -> Unit) {
                 Text(if (page == "signup") "Create account" else "Welcome back", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Text(if (page == "signup") "Join EARENDEL and enjoy music" else "Log in to continue", color = muted, fontSize = 13.sp)
                 Spacer(Modifier.height(24.dp))
-                OutlinedTextField(email, { email = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Gmail or email address") })
+                OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Gmail or email address", color = Color.White) }, colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, cursorColor = violet, focusedLabelColor = violet, unfocusedLabelColor = Color.White, focusedBorderColor = violet, unfocusedBorderColor = Color(0xFF777080), focusedContainerColor = Color(0xFF17131F), unfocusedContainerColor = Color(0xFF17131F)))
                 Spacer(Modifier.height(10.dp))
-                OutlinedTextField(password, { password = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Password") })
+                OutlinedTextField(value = password, onValueChange = { password = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Password", color = Color.White) }, colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, cursorColor = violet, focusedLabelColor = violet, unfocusedLabelColor = Color.White, focusedBorderColor = violet, unfocusedBorderColor = Color(0xFF777080), focusedContainerColor = Color(0xFF17131F), unfocusedContainerColor = Color(0xFF17131F)))
                 Spacer(Modifier.height(16.dp))
                 Button(onClick = { notice = "Secure email authentication is not connected yet. Configure Firebase Authentication to create or access accounts." ; onAuthAttempt() }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF853CFF))) {
                     Text(if (page == "signup") "Create account" else "Log in")
@@ -448,6 +448,22 @@ private fun HomeScreen(
             }
             Text(message, color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
         }
+        Spacer(Modifier.height(18.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("BANGLA ALBUMS", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("PLAY ONLINE", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.height(11.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Bangla Rock\nAnthems", "BANGLA ROCK", Color(0xFF604078), Modifier.weight(1f)) { onArtist("Bangla rock songs") }
+            HomeAlbumTile("Bangla Indie\nDiscoveries", "BANGLA INDIE", Color(0xFF3F6661), Modifier.weight(1f)) { onArtist("Bangla indie songs") }
+        }
+        Spacer(Modifier.height(9.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Modern Bangla\nMelodies", "MODERN", Color(0xFF755044), Modifier.weight(1f)) { onArtist("modern Bangla songs") }
+            HomeAlbumTile("Acoustic Bangla\nSessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.weight(1f)) { onArtist("Bangla acoustic songs") }
+        }
+        Text("Tap an album to search its songs online. Available tracks depend on the music catalogue.", color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(18.dp))
         Text("YOUR COLLECTION", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(11.dp))
