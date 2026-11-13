@@ -301,7 +301,7 @@ private fun HomeScreen(
     onLike: (Track) -> Unit,
     onAdd: (Track) -> Unit
 ) {
-    val artists = listOf("ASHES", "ARTCELL", "HIGHWAY", "SHONAR BANGLA CIRCUS")
+    val artists = listOf("BANGLA ROCK", "BANGLA INDIE", "ALTERNATIVE", "ACOUSTIC")
     Column(modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(bottom = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -372,7 +372,7 @@ private fun HomeScreen(
                     }
                     Spacer(Modifier.height(7.dp))
                     Text(name, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("Bangla artist", color = muted, fontSize = 9.sp)
+                    Text("Explore music", color = muted, fontSize = 9.sp)
                 }
             }
         }
@@ -418,8 +418,8 @@ private fun HomeScreen(
         Spacer(Modifier.height(18.dp))
         Text("BANGLA ARTISTS TO EXPLORE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
-        listOf("ASHES", "Artcell", "Highway", "Shonar Bangla Circus").forEach { artist ->
-            LibraryRow(artist, "Search available online tracks", "♫", Color(0xFF8E77C8)) { onArtist(artist) }
+        listOf("Bangla Alternative", "Bangla Indie", "Modern Bangla", "Acoustic Bangla").forEach { genre ->
+            LibraryRow(genre, "Discover tracks online", "♫", Color(0xFF8E77C8)) { onArtist(genre) }
             Spacer(Modifier.height(7.dp))
         }
         Spacer(Modifier.height(18.dp))
@@ -462,8 +462,8 @@ private fun BanglaRockScreen(
         Spacer(Modifier.height(13.dp))
         Text("BANDS", color = violet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         Row(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("ASHES", "Artcell", "Highway", "Shonar Bangla Circus").forEach { artist ->
-                AssistChip(onClick = { onArtist(artist) }, label = { Text(artist) }, colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = panel2))
+            listOf("Bangla Rock", "Alternative", "Indie", "Acoustic").forEach { genre ->
+                AssistChip(onClick = { onArtist(genre) }, label = { Text(genre) }, colors = AssistChipDefaults.assistChipColors(labelColor = Color.White, containerColor = panel2))
             }
         }
         Spacer(Modifier.height(13.dp))
