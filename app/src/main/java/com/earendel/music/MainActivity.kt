@@ -619,21 +619,6 @@ private fun HomeScreen(
             HomeAlbumTile("English Afterglow", "ENGLISH POP", Color(0xFF4A4C79), Modifier.weight(1f), null) { onArtist("English pop full songs") }
         }
         Spacer(Modifier.height(20.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("SONGS TO DISCOVER", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text("SEARCH & PLAY", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeQuickCard("Oniket Prantor", "Artcell", "♫", Color(0xFF604078), Modifier.weight(1f)) { onArtist("Oniket Prantor Artcell") }
-            HomeQuickCard("Dukkho Bilash", "Artcell", "♫", Color(0xFF3F6661), Modifier.weight(1f)) { onArtist("Dukkho Bilash Artcell") }
-        }
-        Spacer(Modifier.height(9.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeQuickCard("Hashimukh", "Shironamhin", "♫", Color(0xFF755044), Modifier.weight(1f)) { onArtist("Hashimukh Shironamhin") }
-            HomeQuickCard("Cholo Bodle Jai", "LRB", "♫", Color(0xFF465B7C), Modifier.weight(1f)) { onArtist("Cholo Bodle Jai LRB") }
-        }
-        Spacer(Modifier.height(20.dp))
         Box(
             Modifier.fillMaxWidth().height(226.dp).clip(RoundedCornerShape(24.dp))
                 .background(Brush.linearGradient(listOf(Color(0xFF5D3C83), Color(0xFF21172F), Color(0xFF101019))))
@@ -668,40 +653,6 @@ private fun HomeScreen(
                 }
             }
         }
-        Spacer(Modifier.height(21.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("TRENDING BANGLA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            TextButton(onClick = onSearch) { Text("See all", color = violet, fontSize = 11.sp) }
-        }
-        if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
-        if (tracks.isNotEmpty()) {
-            TrackList(tracks.take(5), favorites, onPlay, onLike, onAdd)
-        } else {
-            Text("Discover Bangla rock, indie and alternative sounds.", color = muted, fontSize = 11.sp)
-            Spacer(Modifier.height(9.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                HomeGenreTile("Alternative", "ALT", Color(0xFF69477F), Modifier.weight(1f)) { onArtist("Bangla alternative") }
-                HomeGenreTile("Acoustic", "AC", Color(0xFF456A68), Modifier.weight(1f)) { onArtist("Bangla acoustic") }
-                HomeGenreTile("Rock", "RK", Color(0xFF8A5946), Modifier.weight(1f)) { onArtist("Bangla rock") }
-            }
-            Text(message, color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
-        }
-        Spacer(Modifier.height(18.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("BANGLA ALBUMS", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text("PLAY ONLINE", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.height(11.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Bangla Rock\nAnthems", "BANGLA ROCK", Color(0xFF604078), Modifier.weight(1f), tracks.getOrNull(0)?.artworkUrl) { onArtist("Bangla rock songs") }
-            HomeAlbumTile("Bangla Indie\nDiscoveries", "BANGLA INDIE", Color(0xFF3F6661), Modifier.weight(1f), tracks.getOrNull(1)?.artworkUrl) { onArtist("Bangla indie songs") }
-        }
-        Spacer(Modifier.height(9.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Modern Bangla\nMelodies", "MODERN", Color(0xFF755044), Modifier.weight(1f), tracks.getOrNull(2)?.artworkUrl) { onArtist("modern Bangla songs") }
-            HomeAlbumTile("Acoustic Bangla\nSessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.weight(1f), tracks.getOrNull(3)?.artworkUrl) { onArtist("Bangla acoustic songs") }
-        }
-        Text("Tap an album to search its songs online. Available tracks depend on the music catalogue.", color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(18.dp))
         Text("YOUR COLLECTION", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(11.dp))
@@ -926,18 +877,23 @@ private fun readPlaylists(prefs: android.content.SharedPreferences): List<UserPl
 private fun searchOnline(term: String): List<Track> {
     val cleanTerm = term.trim()
     if (cleanTerm.isBlank()) return emptyList()
-    // Only full-length tracks whose uploader declares a Creative Commons or public-domain licence
-    // are streamed in EARENDEL's own player. Broaden discovery across genres when a search is sparse.
+    // Search a broader Bengali/Hindi catalogue and return up to 50 permitted full-length tracks.
+    // Only items whose uploader declares a Creative Commons or public-domain licence are streamed.
     val collected = mutableListOf<Track>()
-    try { collected.addAll(searchArchive(cleanTerm, 24)) } catch (_: Exception) { }
-    if (collected.size < 8) {
-        val extraQueries = listOf("Bengali folk music", "Bangla independent music", "Hindi classical music", "English folk music")
+    try { collected.addAll(searchArchive(cleanTerm, 35)) } catch (_: Exception) { }
+    if (collected.distinctBy { it.id }.size < 50) {
+        val extraQueries = listOf(
+            "Bangla songs", "Bengali music", "Bengali folk music",
+            "Bangla independent music", "Bangla band music",
+            "Hindi songs", "Hindi classical music", "Hindi folk music",
+            "Hindi independent music"
+        )
         for (extra in extraQueries) {
-            if (collected.size >= 24) break
-            try { collected.addAll(searchArchive(extra, 12)) } catch (_: Exception) { }
+            if (collected.distinctBy { it.id }.size >= 50) break
+            try { collected.addAll(searchArchive(extra, 25)) } catch (_: Exception) { }
         }
     }
-    return collected.distinctBy { it.id }.take(30)
+    return collected.distinctBy { it.id }.take(50)
 }
 
 private fun searchArchive(term: String, maxResults: Int = 60): List<Track> {
