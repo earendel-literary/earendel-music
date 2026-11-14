@@ -591,14 +591,6 @@ private fun HomeScreen(
             }
         }
         Spacer(Modifier.height(15.dp))
-        Surface(Modifier.fillMaxWidth().clickable { onSearch() }, color = Color(0xFF2B2238), shape = RoundedCornerShape(16.dp)) {
-            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Search, null, tint = violet)
-                Spacer(Modifier.width(10.dp))
-                Text("Search songs, artists, albums...", color = muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                Icon(Icons.Default.ArrowForward, null, tint = violet)
-            }
-        }
         Spacer(Modifier.height(17.dp))
         Box(Modifier.fillMaxWidth().height(184.dp).clip(RoundedCornerShape(22.dp)).background(Brush.linearGradient(listOf(Color(0xFF68428D), Color(0xFF2C203B), Color(0xFF17131F)))).clickable { onOpenAlbum("Bangla Soundscape", "Bangla independent music") }) {
             Row(Modifier.fillMaxSize().padding(17.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -646,12 +638,13 @@ private fun HomeScreen(
         }
         Spacer(Modifier.height(21.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("PLAY SOMETHING", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            TextButton(onClick = onSearch) { Text("DISCOVER", color = violet, fontSize = 10.sp) }
+            Text("ALL SONGS", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("${tracks.size} TRACKS", color = violet, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
+        Text("Bangla, Bengali, Hindi & Bollywood selections", color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
-        if (tracks.isEmpty()) Text("Discover online music from Search.", color = muted, fontSize = 11.sp)
-        tracks.take(8).forEach { track ->
+        if (tracks.isEmpty()) Text("Loading songs for you...", color = muted, fontSize = 11.sp)
+        tracks.take(60).forEach { track ->
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(panel, RoundedCornerShape(13.dp)).clickable { onPlay(track) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 TrackArtwork(track.artworkUrl, Modifier.size(46.dp), 9.dp)
                 Spacer(Modifier.width(10.dp))
