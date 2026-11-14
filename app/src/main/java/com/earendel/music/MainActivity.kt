@@ -890,44 +890,53 @@ private fun readPlaylists(prefs: android.content.SharedPreferences): List<UserPl
 
 private fun searchOnline(term: String): List<Track> {
     val cleanTerm = term.trim()
-    if (cleanTerm.isBlank()) return emptyList()
-
-    // Build a Bengali + Hindi starter catalogue only. Every track must pass
-    // searchArchive's explicit open-licence and full-length checks.
     val collected = mutableListOf<Track>()
-    val languageQueries = listOf(
-        "Bangla music" to 10,
-        "Bengali songs" to 10,
-        "Bengali folk music" to 10,
-        "Bangla folk songs" to 10,
-        "Baul songs Bengali" to 8,
-        "Rabindra Sangeet" to 8,
-        "Nazrul Geeti" to 8,
-        "Bengali independent music" to 8,
-        "Hindi music" to 10,
-        "Hindi songs" to 10,
-        "Hindi independent music" to 10,
-        "Hindi folk music" to 8,
-        "Hindi classical music" to 8,
-        "Hindi ghazal" to 8,
-        "Hindi devotional music" to 8
-    )
-    for ((query, limit) in languageQueries) {
+    // Deezer provides legal 30-second listening previews without requiring user login.
+    val queries = listOf("Bangla", "Bengali", "Hindi", "Bollywood", cleanTerm).distinct()
+    for (query in queries) {
+        try {
+            collected.addAll(searchDeezer(query, 25))
+        } catch (_: Exception) { }
         if (collected.distinctBy { it.id }.size >= 60) break
-        try {
-            val remaining = (60 - collected.distinctBy { it.id }.size).coerceAtLeast(1)
-            collected.addAll(searchArchive(query, minOf(limit, remaining + 3)))
-        } catch (_: Exception) { }
     }
-
-    // Use the user's original search as a final language-specific discovery query.
+    // Fill any remaining slots with recordings whose Internet Archive item explicitly declares an open licence.
     if (collected.distinctBy { it.id }.size < 60) {
-        try {
-            val remaining = 60 - collected.distinctBy { it.id }.size
-            collected.addAll(searchArchive(cleanTerm, remaining + 3))
-        } catch (_: Exception) { }
+        val archiveQueries = listOf("Bengali folk music", "Bangla folk songs", "Hindi folk music", "Rabindra Sangeet")
+        for (query in archiveQueries) {
+            try { collected.addAll(searchArchive(query, 12)) } catch (_: Exception) { }
+            if (collected.distinctBy { it.id }.size >= 60) break
+        }
     }
     return collected.distinctBy { it.id }.take(60)
+}
+
+private fun searchDeezer(term: String, limit: Int = 25): List<Track> {
+    val encoded = URLEncoder.encode(term, "UTF-8")
+    val request = Request.Builder()
+        .url("https://api.deezer.com/search?q=$encoded&limit=$limit")
+        .header("User-Agent", "EARENDEL-MUSIC/2.0")
+        .get().build()
+    val body = OkHttpClient.Builder()
+        .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .build().newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("Music search failed: ${response.code}")
+            response.body?.string() ?: error("Empty music search response")
+        }
+    val data = JSONObject(body).optJSONArray("data") ?: JSONArray()
+    val results = mutableListOf<Track>()
+    for (i in 0 until data.length()) {
+        val item = data.optJSONObject(i) ?: continue
+        val preview = item.optString("preview")
+        if (!preview.startsWith("https://")) continue
+        val artist = item.optJSONObject("artist")?.optString("name").orEmpty().ifBlank { "Unknown artist" }
+        val album = item.optJSONObject("album")
+        val cover = album?.optString("cover_xl").orEmpty().ifBlank { album?.optString("cover_big").orEmpty() }
+        val title = item.optString("title").ifBlank { "Unknown track" }
+        val id = item.optString("id").ifBlank { "$term-$i" }
+        results.add(Track("deezer-$id", title, artist, preview, cover))
+    }
+    return results
 }
 private fun searchArchive(term: String, maxResults: Int = 60): List<Track> {
     val client = OkHttpClient.Builder()
