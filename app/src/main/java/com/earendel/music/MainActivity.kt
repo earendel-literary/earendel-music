@@ -62,6 +62,11 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.security.SecureRandom
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
+import android.util.Base64
 
 data class Track(val id: String, val title: String, val artist: String, val stream: String, val artworkUrl: String = "")
 data class UserPlaylist(val name: String, val tracks: List<Track>)
@@ -107,12 +112,42 @@ fun EarendelMusic(player: ExoPlayer) {
     var homeCollection by remember { mutableStateOf<String?>(null) }
     var selectedAlbum by remember { mutableStateOf<String?>(null) }
     var isAuthenticated by remember { mutableStateOf(true) }
+    var adminUnlocked by remember { mutableStateOf(false) }
+    var showPinDialog by remember { mutableStateOf(false) }
+    var pinInput by remember { mutableStateOf("") }
+    var pinError by remember { mutableStateOf("") }
+    var pinSetupConfirm by remember { mutableStateOf(false) }
+    var pendingPin by remember { mutableStateOf("") }
+    var pinHash by remember { mutableStateOf(prefs.getString("admin_pin_hash", "").orEmpty()) }
+    var pinSalt by remember { mutableStateOf(prefs.getString("admin_pin_salt", "").orEmpty()) }
+    var pendingAddTrack by remember { mutableStateOf<Track?>(null) }
     val scope = rememberCoroutineScope()
     val favorites = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "liked")) } }
     val playlists = remember { mutableStateListOf<UserPlaylist>().apply { addAll(readPlaylists(prefs)) } }
     val localSongs = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "local_songs")) } }
     fun persist() {
         prefs.edit().putString("liked", tracksJson(favorites)).putString("playlists", playlistsJson(playlists)).putString("local_songs", tracksJson(localSongs)).apply()
+    }
+    fun requestAdmin(track: Track? = null) {
+        pendingAddTrack = track
+        if (adminUnlocked) {
+            tab = "Admin"
+            if (track != null) addTrackTarget = track
+        } else {
+            pinInput = ""
+            pinError = ""
+            pinSetupConfirm = false
+            showPinDialog = true
+        }
+    }
+    fun unlockAdmin() {
+        adminUnlocked = true
+        showPinDialog = false
+        tab = "Admin"
+        pendingAddTrack?.let { addTrackTarget = it }
+        pendingAddTrack = null
+        pinInput = ""
+        pinError = ""
     }
 
     val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -204,13 +239,13 @@ fun EarendelMusic(player: ExoPlayer) {
                         Spacer(Modifier.height(10.dp))
                         Text(message, color = muted, fontSize = 12.sp)
                         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
-                        TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it }, modifier = Modifier.weight(1f))
+                        TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { requestAdmin(it) }, modifier = Modifier.weight(1f))
                         }
                     }
-                    "Library" -> {
+                    "Admin" -> {
                         Column(Modifier.fillMaxSize()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Your Library", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            Column(Modifier.weight(1f)) { Text("Private Admin Panel", color = Color.White, fontSize = 23.sp, fontWeight = FontWeight.Bold); Text("ONLY ON THIS PHONE · PRIVATE", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp) }
                             FilledTonalButton(onClick = { audioPicker.launch(arrayOf("audio/*")) }, colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF392752), contentColor = violet)) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(Modifier.width(4.dp))
@@ -226,17 +261,17 @@ fun EarendelMusic(player: ExoPlayer) {
                         Spacer(Modifier.height(12.dp))
                         if (selectedPlaylist == "♥ Liked Songs") {
                             Text("LIKED SONGS", color = violet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            TrackList(favorites, favorites, onPlay = { play(it, favorites) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
+                            TrackList(favorites, favorites, onPlay = { play(it, favorites) }, onLike = { toggleLike(it) }, onAdd = { requestAdmin(it) })
                         } else if (selectedPlaylist == "♪ My Songs") {
                             Text("MY IMPORTED SONGS · ${localSongs.size}", color = violet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            TrackList(localSongs, favorites, onPlay = { play(it, localSongs) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
+                            TrackList(localSongs, favorites, onPlay = { play(it, localSongs) }, onLike = { toggleLike(it) }, onAdd = { requestAdmin(it) })
                         } else if (selectedPlaylist != null) {
                             val pl = playlists.firstOrNull { it.name == selectedPlaylist }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { selectedPlaylist = null }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) }
                                 Text(selectedPlaylist ?: "", color = Color.White, fontWeight = FontWeight.Bold)
                             }
-                            TrackList(pl?.tracks ?: emptyList(), favorites, onPlay = { play(it, pl?.tracks ?: emptyList()) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
+                            TrackList(pl?.tracks ?: emptyList(), favorites, onPlay = { play(it, pl?.tracks ?: emptyList()) }, onLike = { toggleLike(it) }, onAdd = { requestAdmin(it) })
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("YOUR ALBUMS & PLAYLISTS", color = muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -274,7 +309,7 @@ fun EarendelMusic(player: ExoPlayer) {
                                         Text("PLAY ALL", color = violet)
                                     }
                                 }
-                                TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it }, modifier = Modifier.weight(1f))
+                                TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { requestAdmin(it) }, modifier = Modifier.weight(1f))
                             }
                         } else if (homeCollection == "Bangla Rock") {
                             BanglaRockScreen(
@@ -286,7 +321,7 @@ fun EarendelMusic(player: ExoPlayer) {
                                 onBack = { homeCollection = null },
                                 onPlay = { play(it, tracks) },
                                 onLike = { toggleLike(it) },
-                                onAdd = { addTrackTarget = it },
+                                onAdd = { requestAdmin(it) },
                                 onArtist = { name -> query = name; search(name) }
                             )
                         } else HomeScreen(
@@ -305,7 +340,7 @@ fun EarendelMusic(player: ExoPlayer) {
                             },
                             onPlay = { play(it, tracks) },
                             onLike = { toggleLike(it) },
-                            onAdd = { addTrackTarget = it }
+                            onAdd = { requestAdmin(it) }
                         )
                     }
                 }
@@ -342,13 +377,46 @@ fun EarendelMusic(player: ExoPlayer) {
                 }
 
                 Row(Modifier.fillMaxWidth().background(ink).padding(top = 7.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
-                    BottomItem("Home", Icons.Default.Home, tab == "Home") { tab = "Home"; homeCollection = null; selectedAlbum = null }
-                    BottomItem("Search", Icons.Default.Search, tab == "Search") { tab = "Search" }
-                    BottomItem("Library", Icons.Default.LibraryMusic, tab == "Library") { tab = "Library"; selectedPlaylist = null }
+                    BottomItem("Home", Icons.Default.Home, tab == "Home") { tab = "Home"; adminUnlocked = false; homeCollection = null; selectedAlbum = null }
+                    BottomItem("Search", Icons.Default.Search, tab == "Search") { tab = "Search"; adminUnlocked = false }
+                    BottomItem("Admin", Icons.Default.Lock, tab == "Admin") { requestAdmin() }
                 }
             }
         }
 
+        if (showPinDialog) AlertDialog(
+            onDismissRequest = { showPinDialog = false; pinInput = ""; pinError = ""; pinSetupConfirm = false; pendingPin = "" },
+            title = { Text(if (pinHash.isBlank()) { if (pinSetupConfirm) "Confirm your Admin PIN" else "Create private Admin PIN" } else "Unlock Admin Panel", color = Color.White) },
+            text = {
+                Column {
+                    Text(if (pinHash.isBlank()) { if (pinSetupConfirm) "Enter the same 6-digit PIN again." else "Set a 6-digit PIN. Your private albums and songs stay on this phone." } else "Enter your 6-digit PIN to open your private songs and albums.", color = muted, fontSize = 13.sp)
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(value = pinInput, onValueChange = { value -> if (value.length <= 6 && value.all { it.isDigit() }) pinInput = value; pinError = "" }, label = { Text("6-digit PIN") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), visualTransformation = PasswordVisualTransformation())
+                    if (pinError.isNotBlank()) Text(pinError, color = Color(0xFFFF8A8A), fontSize = 12.sp)
+                }
+            },
+            confirmButton = { TextButton(onClick = {
+                if (pinInput.length != 6) { pinError = "Please enter exactly 6 digits." }
+                else if (pinHash.isBlank() && !pinSetupConfirm) { pendingPin = pinInput; pinInput = ""; pinSetupConfirm = true }
+                else if (pinHash.isBlank()) {
+                    if (pinInput != pendingPin) { pinError = "PINs did not match. Try again."; pinInput = ""; pendingPin = ""; pinSetupConfirm = false }
+                    else {
+                        val saltBytes = ByteArray(16).also { SecureRandom().nextBytes(it) }
+                        val saltValue = Base64.encodeToString(saltBytes, Base64.NO_WRAP)
+                        val hashValue = hashAdminPin(pinInput, saltBytes)
+                        prefs.edit().putString("admin_pin_salt", saltValue).putString("admin_pin_hash", hashValue).apply()
+                        pinSalt = saltValue; pinHash = hashValue; pendingPin = ""; unlockAdmin()
+                    }
+                } else {
+                    val saltBytes = runCatching { Base64.decode(pinSalt, Base64.NO_WRAP) }.getOrElse { ByteArray(0) }
+                    val enteredHash = hashAdminPin(pinInput, saltBytes)
+                    if (saltBytes.isNotEmpty() && MessageDigest.isEqual(enteredHash.toByteArray(), pinHash.toByteArray())) unlockAdmin()
+                    else { pinError = "Wrong PIN. Try again."; pinInput = "" }
+                }
+            }) { Text(if (pinHash.isBlank() && !pinSetupConfirm) "Continue" else if (pinHash.isBlank()) "Save PIN" else "Unlock", color = violet) } },
+            dismissButton = { TextButton(onClick = { showPinDialog = false; pinInput = ""; pendingPin = ""; pinError = ""; pinSetupConfirm = false }) { Text("Cancel") } },
+            containerColor = panel
+        )
         if (showCreate) AlertDialog(
             onDismissRequest = { showCreate = false },
             title = { Text("Create album / playlist", color = Color.White) },
@@ -863,6 +931,14 @@ private fun BottomItem(label: String, icon: androidx.compose.ui.graphics.vector.
         Text(label, color = if (selected) violet else muted, fontSize = 10.sp)
     }
 }
+private fun hashAdminPin(pin: String, salt: ByteArray): String {
+    val spec = PBEKeySpec(pin.toCharArray(), salt, 120000, 256)
+    return try {
+        val bytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        Base64.encodeToString(bytes, Base64.NO_WRAP)
+    } finally { spec.clearPassword() }
+}
+
 private fun timeLabel(ms: Float): String {
     val total = (ms / 1000).toInt().coerceAtLeast(0)
     return "%d:%02d".format(total / 60, total % 60)
