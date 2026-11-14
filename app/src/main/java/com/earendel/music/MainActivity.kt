@@ -582,144 +582,90 @@ private fun HomeScreen(
     onLike: (Track) -> Unit,
     onAdd: (Track) -> Unit
 ) {
-    Column(modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(bottom = 18.dp)) {
+    Column(modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(bottom = 20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("YOUR PERSONAL SOUNDTRACK", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.8.sp)
-                Text("Your world.\nYour music.", color = Color.White, fontSize = 29.sp, lineHeight = 32.sp, fontWeight = FontWeight.ExtraBold)
+                Text("EARENDEL • YOUR MUSIC SPACE", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                Text("Music for every\nmood.", color = Color.White, fontSize = 30.sp, lineHeight = 33.sp, fontWeight = FontWeight.ExtraBold)
             }
-            Box(Modifier.size(62.dp).background(Brush.linearGradient(listOf(Color(0xFF7650A6), Color(0xFF302044))), RoundedCornerShape(20.dp)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.GraphicEq, null, tint = Color(0xFFE4D5FF), modifier = Modifier.size(36.dp))
+            Box(Modifier.size(58.dp).background(Brush.linearGradient(listOf(Color(0xFF9865D5), Color(0xFF322044))), RoundedCornerShape(19.dp)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.GraphicEq, null, tint = Color.White, modifier = Modifier.size(34.dp))
             }
         }
-        Spacer(Modifier.height(16.dp))
-        Surface(
-            modifier = Modifier.fillMaxWidth().clickable { onSearch() },
-            color = Color(0xFF302044), shape = RoundedCornerShape(18.dp)
-        ) {
-            Row(Modifier.padding(horizontal = 15.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.height(15.dp))
+        Surface(Modifier.fillMaxWidth().clickable { onSearch() }, color = Color(0xFF2B2238), shape = RoundedCornerShape(16.dp)) {
+            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Search, null, tint = violet)
                 Spacer(Modifier.width(10.dp))
-                Text("Find songs, artists and albums", color = muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                Text("Search songs, artists, albums...", color = muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ArrowForward, null, tint = violet)
             }
         }
-        Spacer(Modifier.height(19.dp))
-        Text("PICK YOUR MOOD", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeQuickCard("Liked Songs", "Your favourites", "♥", Color(0xFF7446A6), Modifier.weight(1f)) { onArtist("Bangla alternative rock") }
-            HomeQuickCard("Bangla Rock", "Bands & anthems", "♫", Color(0xFF315C70), Modifier.weight(1f), onBanglaRock)
-        }
-        Spacer(Modifier.height(9.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeQuickCard("Indie Vibes", "Fresh independent music", "✦", Color(0xFF79513D), Modifier.weight(1f)) { onArtist("Bangla indie") }
-            HomeQuickCard("New Discoveries", "Find something new", "◉", Color(0xFF465B48), Modifier.weight(1f)) { onSearch() }
-        }
-
-        Spacer(Modifier.height(23.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("MADE FOR YOU", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text("CURATED MIXES", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.height(11.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Bangla Rock Anthems", "BANGLA ROCK", Color(0xFF604078), Modifier.weight(1f), tracks.getOrNull(0)?.artworkUrl) { onOpenAlbum("Bangla Rock Anthems", "Bangla rock music") }
-            HomeAlbumTile("Bangla Indie Stories", "BANGLA INDIE", Color(0xFF3F6661), Modifier.weight(1f), tracks.getOrNull(1)?.artworkUrl) { onOpenAlbum("Bangla Indie Stories", "Bangla independent music") }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Alternative Pulse", "ALTERNATIVE", Color(0xFF755044), Modifier.weight(1f), tracks.getOrNull(2)?.artworkUrl) { onOpenAlbum("Alternative Pulse", "Bangla alternative music") }
-            HomeAlbumTile("Acoustic Sessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.weight(1f), tracks.getOrNull(3)?.artworkUrl) { onOpenAlbum("Acoustic Sessions", "Bangla acoustic music") }
-        }
-
-        Spacer(Modifier.height(24.dp))
-        Text("LOFI & CHILL ALBUMS", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(11.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Purrple Cat", "LOFI BEATS", Color(0xFF554477), Modifier.weight(1f)) { onOpenAlbum("Purrple Cat", "Purrple Cat lofi") }
-            HomeAlbumTile("Holizna", "FREE LOFI", Color(0xFF315D62), Modifier.weight(1f)) { onOpenAlbum("Holizna", "Holizna lofi beats") }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Chillhop", "CHILL BEATS", Color(0xFF79513D), Modifier.weight(1f)) { onOpenAlbum("Chillhop", "chillhop instrumental") }
-            HomeAlbumTile("Ambient Dreams", "INSTRUMENTAL", Color(0xFF48577B), Modifier.weight(1f)) { onOpenAlbum("Ambient Dreams", "ambient instrumental") }
-        }
-
-        Spacer(Modifier.height(24.dp))
-        Text("BANGLA BAND SPOTLIGHT", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(11.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Artcell Essentials", "ARTCELL", Color(0xFF553D73), Modifier.weight(1f)) { onOpenAlbum("Artcell Essentials", "Artcell") }
-            HomeAlbumTile("Asees Collection", "ASEES", Color(0xFF315D62), Modifier.weight(1f)) { onOpenAlbum("Asees Collection", "Asees band") }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Shonar Bangla Circus", "SBC", Color(0xFF79513D), Modifier.weight(1f)) { onOpenAlbum("Shonar Bangla Circus", "Shonar Bangla Circus") }
-            HomeAlbumTile("Highway Collection", "HIGHWAY", Color(0xFF48577B), Modifier.weight(1f)) { onOpenAlbum("Highway Collection", "Highway band") }
-        }
-
-        Spacer(Modifier.height(24.dp))
-        Box(
-            Modifier.fillMaxWidth().height(205.dp).clip(RoundedCornerShape(23.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFF5D3C83), Color(0xFF21172F), Color(0xFF101019))))
-                .clickable { onArtist("Bangla alternative rock") }
-        ) {
-            if (!tracks.firstOrNull()?.artworkUrl.isNullOrBlank()) {
-                AsyncImage(model = tracks.first().artworkUrl, contentDescription = "Featured album cover", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alpha = 0.34f)
-            }
-            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xCC130D1C), Color(0x33130D1C), Color(0xAA130D1C)))))
+        Spacer(Modifier.height(17.dp))
+        Box(Modifier.fillMaxWidth().height(184.dp).clip(RoundedCornerShape(22.dp)).background(Brush.linearGradient(listOf(Color(0xFF68428D), Color(0xFF2C203B), Color(0xFF17131F)))).clickable { onOpenAlbum("Bangla Soundscape", "Bangla independent music") }) {
             Row(Modifier.fillMaxSize().padding(17.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("EARENDEL FEATURED", color = Color(0xFFE1D0FF), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Text("FEATURED COLLECTION", color = Color(0xFFE7D8FF), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("THE SOUND\nOF BANGLA", color = Color.White, fontSize = 24.sp, lineHeight = 27.sp, fontWeight = FontWeight.ExtraBold)
-                    Spacer(Modifier.height(7.dp))
-                    Text("Rock • Indie • Alternative", color = Color(0xFFD0C4DF), fontSize = 10.sp)
-                    Spacer(Modifier.height(11.dp))
-                    Text("EXPLORE COLLECTION  →", color = Color(0xFFE4D5FF), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("THE SOUND\nOF BANGLA", color = Color.White, fontSize = 25.sp, lineHeight = 28.sp, fontWeight = FontWeight.ExtraBold)
+                    Spacer(Modifier.height(9.dp))
+                    Text("Rock • Indie • Acoustic", color = Color(0xFFD5C9E4), fontSize = 10.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Text("LISTEN NOW  →", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
-                Box(Modifier.size(112.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF332447)), contentAlignment = Alignment.Center) {
-                    if (!tracks.firstOrNull()?.artworkUrl.isNullOrBlank()) {
-                        AsyncImage(model = tracks.first().artworkUrl, contentDescription = "Album artwork", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    } else Icon(Icons.Default.Album, null, tint = Color(0xFFE4D5FF), modifier = Modifier.size(62.dp))
+                Box(Modifier.size(104.dp).background(Color(0xFF3A2A50), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Album, null, tint = Color(0xFFE8DFFF), modifier = Modifier.size(65.dp))
                 }
             }
         }
-
-        Spacer(Modifier.height(23.dp))
-        Text("MORE TO EXPLORE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(21.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("MADE FOR YOU", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("ALBUMS & MIXES", color = violet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        }
         Spacer(Modifier.height(11.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeGenreTile("Hindi Mix", "HINDI", Color(0xFF77523D), Modifier.weight(1f)) { onOpenAlbum("Hindi Mix", "Hindi music") }
-            HomeGenreTile("English Pop", "POP", Color(0xFF4E5480), Modifier.weight(1f)) { onOpenAlbum("English Pop", "English pop") }
-            HomeGenreTile("Acoustic", "SOFT", Color(0xFF53617B), Modifier.weight(1f)) { onOpenAlbum("Acoustic Sessions", "acoustic music") }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Bangla Rock", "BAND ANTHEMS", Color(0xFF604078), Modifier.weight(1f), tracks.getOrNull(0)?.artworkUrl) { onOpenAlbum("Bangla Rock", "Bangla rock music") }
+            HomeAlbumTile("Bangla Indie", "INDEPENDENT", Color(0xFF3F6661), Modifier.weight(1f), tracks.getOrNull(1)?.artworkUrl) { onOpenAlbum("Bangla Indie", "Bangla independent music") }
         }
         Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeGenreTile("Rock Classics", "ROCK", Color(0xFF785044), Modifier.weight(1f)) { onOpenAlbum("Rock Classics", "rock music") }
-            HomeGenreTile("Chill Mix", "CHILL", Color(0xFF4E6B70), Modifier.weight(1f)) { onOpenAlbum("Chill Mix", "chill music") }
-            HomeGenreTile("Modern Bangla", "BD", Color(0xFF526C63), Modifier.weight(1f)) { onOpenAlbum("Modern Bangla", "Bangla music") }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Hindi Melodies", "HINDI MIX", Color(0xFF79513D), Modifier.weight(1f), tracks.getOrNull(2)?.artworkUrl) { onOpenAlbum("Hindi Melodies", "Hindi independent music") }
+            HomeAlbumTile("English Pop", "GLOBAL POP", Color(0xFF465B7C), Modifier.weight(1f), tracks.getOrNull(3)?.artworkUrl) { onOpenAlbum("English Pop", "English indie pop") }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Lofi & Chill", "CHILL BEATS", Color(0xFF554477), Modifier.weight(1f)) { onOpenAlbum("Lofi & Chill", "lofi chill beats") }
+            HomeAlbumTile("Acoustic", "SOFT SOUNDS", Color(0xFF315D62), Modifier.weight(1f)) { onOpenAlbum("Acoustic", "acoustic instrumental music") }
+        }
+        Spacer(Modifier.height(22.dp))
+        Text("BROWSE YOUR VIBE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            HomeGenreTile("Bangla Rock", "ROCK", Color(0xFF624477), Modifier.weight(1f), onBanglaRock)
+            HomeGenreTile("Hindi Mix", "HINDI", Color(0xFF77523D), Modifier.weight(1f)) { onOpenAlbum("Hindi Mix", "Hindi music") }
+            HomeGenreTile("Lo-fi", "CHILL", Color(0xFF4E6B70), Modifier.weight(1f)) { onOpenAlbum("Lo-fi", "lofi music") }
+        }
+        Spacer(Modifier.height(21.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("PLAY SOMETHING", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            TextButton(onClick = onSearch) { Text("DISCOVER", color = violet, fontSize = 10.sp) }
+        }
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
-        Text("SONGS FOR YOU", color = muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
-        Text(message, color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 5.dp))
-        if (tracks.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            tracks.take(12).forEach { track ->
-                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(panel, RoundedCornerShape(13.dp)).clickable { onPlay(track) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TrackArtwork(track.artworkUrl, Modifier.size(46.dp), 9.dp)
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(track.title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                        Text(track.artist, color = muted, fontSize = 10.sp, maxLines = 1)
-                    }
-                    IconButton(onClick = { onLike(track) }) { Icon(Icons.Default.Favorite, null, tint = if (favorites.any { it.id == track.id }) violet else muted) }
-                    IconButton(onClick = { onAdd(track) }) { Icon(Icons.Default.PlaylistAdd, null, tint = muted) }
+        if (tracks.isEmpty()) Text("Discover online music from Search.", color = muted, fontSize = 11.sp)
+        tracks.take(8).forEach { track ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(panel, RoundedCornerShape(13.dp)).clickable { onPlay(track) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TrackArtwork(track.artworkUrl, Modifier.size(46.dp), 9.dp)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(track.title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    Text(track.artist, color = muted, fontSize = 10.sp, maxLines = 1)
                 }
+                IconButton(onClick = { onLike(track) }) { Icon(Icons.Default.Favorite, null, tint = if (favorites.any { it.id == track.id }) violet else muted) }
+                IconButton(onClick = { onAdd(track) }) { Icon(Icons.Default.PlaylistAdd, null, tint = muted) }
             }
         }
+        Text(message, color = muted, fontSize = 9.sp, modifier = Modifier.padding(top = 5.dp))
     }
 }
 
