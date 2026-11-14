@@ -129,13 +129,13 @@ fun EarendelMusic(player: ExoPlayer) {
         }
     }
 
-    fun search(term: String) {
+    fun search(term: String, albumOnly: Boolean = false) {
         if (term.isBlank()) return
         loading = true
         message = "Searching free full-length music…"
         scope.launch {
             try {
-                val found = withContext(Dispatchers.IO) { searchOnline(term) }
+                val found = withContext(Dispatchers.IO) { if (albumOnly) searchArchive(term, 60) else searchOnline(term) }
                 tracks = found
                 message = if (found.isEmpty()) "No verified free full-length tracks found. Try another spelling or search." else
                     "\${found.size} free, openly licensed full-length tracks found. Availability depends on the archive catalogue."
@@ -303,7 +303,7 @@ fun EarendelMusic(player: ExoPlayer) {
                             onOpenAlbum = { title, term ->
                                 selectedAlbum = title
                                 query = term
-                                search(term)
+                                search(term, true)
                             },
                             onPlay = { play(it, tracks) },
                             onLike = { toggleLike(it) },
