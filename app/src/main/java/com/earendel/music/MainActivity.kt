@@ -1,6 +1,10 @@
 package com.earendel.music
 
 import android.os.Bundle
+import android.content.Intent
+import android.media.MediaMetadataRetriever
+import android.provider.OpenableColumns
+import android.widget.Toast
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CustomCredential
@@ -12,6 +16,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
@@ -54,6 +60,8 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
+import java.io.File
+import java.io.FileOutputStream
 
 data class Track(val id: String, val title: String, val artist: String, val stream: String, val artworkUrl: String = "")
 data class UserPlaylist(val name: String, val tracks: List<Track>)
@@ -101,9 +109,23 @@ fun EarendelMusic(player: ExoPlayer) {
     val scope = rememberCoroutineScope()
     val favorites = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "liked")) } }
     val playlists = remember { mutableStateListOf<UserPlaylist>().apply { addAll(readPlaylists(prefs)) } }
+    val localSongs = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "local_songs")) } }
+    val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) {
+            uris.forEach { uri ->
+                try { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) { }
+            }
+            scope.launch {
+                val imported = withContext(Dispatchers.IO) { uris.mapNotNull { uri -> runCatching { localTrackFromUri(context, uri) }.getOrNull() } }
+                imported.forEach { track -> if (localSongs.none { it.id == track.id }) localSongs.add(track) }
+                persist()
+                Toast.makeText(context, if (imported.isEmpty()) "Could not import selected audio files." else "${imported.size} song(s) added to My Songs.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     fun persist() {
-        prefs.edit().putString("liked", tracksJson(favorites)).putString("playlists", playlistsJson(playlists)).apply()
+        prefs.edit().putString("liked", tracksJson(favorites)).putString("playlists", playlistsJson(playlists)).putString("local_songs", tracksJson(localSongs)).apply()
     }
     fun search(term: String) {
         if (term.isBlank()) return
@@ -187,16 +209,27 @@ fun EarendelMusic(player: ExoPlayer) {
                     }
                     "Library" -> {
                         Column(Modifier.fillMaxSize()) {
-                        Text("Your Library", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Your Library", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            FilledTonalButton(onClick = { audioPicker.launch(arrayOf("audio/*")) }, colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF392752), contentColor = violet)) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Add songs", fontSize = 12.sp)
+                            }
+                        }
                         Spacer(Modifier.height(14.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             LibraryPill("Playlists", true) { selectedPlaylist = null }
                             LibraryPill("Liked Songs", false) { selectedPlaylist = "♥ Liked Songs" }
+                            LibraryPill("My Songs", false) { selectedPlaylist = "♪ My Songs" }
                         }
                         Spacer(Modifier.height(12.dp))
                         if (selectedPlaylist == "♥ Liked Songs") {
                             Text("LIKED SONGS", color = violet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             TrackList(favorites, favorites, onPlay = { play(it, favorites) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
+                        } else if (selectedPlaylist == "♪ My Songs") {
+                            Text("MY IMPORTED SONGS · ${localSongs.size}", color = violet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            TrackList(localSongs, favorites, onPlay = { play(it, localSongs) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
                         } else if (selectedPlaylist != null) {
                             val pl = playlists.firstOrNull { it.name == selectedPlaylist }
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -212,6 +245,9 @@ fun EarendelMusic(player: ExoPlayer) {
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
                                 item {
                                     LibraryRow("Liked Songs", "${favorites.size} liked tracks", "♥", violet) { selectedPlaylist = "♥ Liked Songs" }
+                                }
+                                item {
+                                    LibraryRow("My Songs", "${localSongs.size} imported tracks", "♫", Color(0xFF8E77C8)) { selectedPlaylist = "♪ My Songs" }
                                 }
                                 items(playlists, key = { it.name }) { pl ->
                                     LibraryRow(pl.name, "${pl.tracks.size} songs", "♫", Color(0xFF8E77C8)) { selectedPlaylist = pl.name }
@@ -754,6 +790,38 @@ private fun TrackArtwork(url: String, modifier: Modifier = Modifier, corner: and
             Icon(Icons.Default.MusicNote, null, tint = violet, modifier = Modifier.size(25.dp))
         }
     }
+}
+
+private fun localTrackFromUri(context: android.content.Context, uri: android.net.Uri): Track {
+    val retriever = MediaMetadataRetriever()
+    var title = ""
+    var artist = ""
+    var artworkUrl = ""
+    try {
+        retriever.setDataSource(context, uri)
+        title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE).orEmpty()
+        artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST).orEmpty()
+        val picture = retriever.embeddedPicture
+        if (picture != null && picture.isNotEmpty()) {
+            val artworkDir = File(context.filesDir, "song_artwork").apply { mkdirs() }
+            val artworkFile = File(artworkDir, "${uri.toString().hashCode().toUInt()}.jpg")
+            FileOutputStream(artworkFile).use { it.write(picture) }
+            artworkUrl = artworkFile.toURI().toString()
+        }
+    } finally {
+        try { retriever.release() } catch (_: Exception) { }
+    }
+    if (title.isBlank()) {
+        title = try {
+            context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0).orEmpty().substringBeforeLast(".") else ""
+            }.orEmpty()
+        } catch (_: Exception) { "" }
+    }
+    if (title.isBlank()) title = "Local audio"
+    if (artist.isBlank()) artist = "Unknown Artist"
+    val id = "local-${uri.toString().hashCode().toUInt()}"
+    return Track(id, title, artist, uri.toString(), artworkUrl)
 }
 
 private fun lookupAlbumCover(query: String): String {
