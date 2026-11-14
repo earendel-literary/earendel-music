@@ -105,6 +105,7 @@ fun EarendelMusic(player: ExoPlayer) {
     var selectedPlaylist by remember { mutableStateOf<String?>(null) }
     var addTrackTarget by remember { mutableStateOf<Track?>(null) }
     var homeCollection by remember { mutableStateOf<String?>(null) }
+    var selectedAlbum by remember { mutableStateOf<String?>(null) }
     var isAuthenticated by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
     val scope = rememberCoroutineScope()
     val favorites = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "liked")) } }
@@ -259,7 +260,25 @@ fun EarendelMusic(player: ExoPlayer) {
                         }
                     }
                     else -> {
-                        if (homeCollection == "Bangla Rock") {
+                        if (selectedAlbum != null) {
+                            Column(Modifier.fillMaxSize()) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = { selectedAlbum = null }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) }
+                                    Text("ALBUM", color = violet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Text(selectedAlbum ?: "", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                                Text("${tracks.size} SONGS", color = muted, fontSize = 10.sp)
+                                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
+                                Text(message, color = muted, fontSize = 10.sp, modifier = Modifier.padding(vertical = 6.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                    TextButton(onClick = { tracks.firstOrNull()?.let { play(it, tracks) } }) {
+                                        Icon(Icons.Default.PlayArrow, null, tint = violet)
+                                        Text("PLAY ALL", color = violet)
+                                    }
+                                }
+                                TrackList(tracks, favorites, onPlay = { play(it, tracks) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it }, modifier = Modifier.weight(1f))
+                            }
+                        } else if (homeCollection == "Bangla Rock") {
                             BanglaRockScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 tracks = tracks,
@@ -281,6 +300,11 @@ fun EarendelMusic(player: ExoPlayer) {
                             onSearch = { tab = "Search" },
                             onBanglaRock = { homeCollection = "Bangla Rock"; query = "Bangla rock"; search("Bangla rock") },
                             onArtist = { name -> query = name; tab = "Search"; search(name) },
+                            onOpenAlbum = { title, term ->
+                                selectedAlbum = title
+                                query = term
+                                search(term)
+                            },
                             onPlay = { play(it, tracks) },
                             onLike = { toggleLike(it) },
                             onAdd = { addTrackTarget = it }
@@ -320,7 +344,7 @@ fun EarendelMusic(player: ExoPlayer) {
                 }
 
                 Row(Modifier.fillMaxWidth().background(ink).padding(top = 7.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
-                    BottomItem("Home", Icons.Default.Home, tab == "Home") { tab = "Home"; homeCollection = null }
+                    BottomItem("Home", Icons.Default.Home, tab == "Home") { tab = "Home"; homeCollection = null; selectedAlbum = null }
                     BottomItem("Search", Icons.Default.Search, tab == "Search") { tab = "Search" }
                     BottomItem("Library", Icons.Default.LibraryMusic, tab == "Library") { tab = "Library"; selectedPlaylist = null }
                 }
@@ -553,6 +577,7 @@ private fun HomeScreen(
     onSearch: () -> Unit,
     onBanglaRock: () -> Unit,
     onArtist: (String) -> Unit,
+    onOpenAlbum: (String, String) -> Unit,
     onPlay: (Track) -> Unit,
     onLike: (Track) -> Unit,
     onAdd: (Track) -> Unit
@@ -599,39 +624,39 @@ private fun HomeScreen(
         }
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Bangla Rock Anthems", "BANGLA ROCK", Color(0xFF604078), Modifier.weight(1f), tracks.getOrNull(0)?.artworkUrl) { onArtist("Bangla rock songs") }
-            HomeAlbumTile("Bangla Indie Stories", "BANGLA INDIE", Color(0xFF3F6661), Modifier.weight(1f), tracks.getOrNull(1)?.artworkUrl) { onArtist("Bangla indie songs") }
+            HomeAlbumTile("Bangla Rock Anthems", "BANGLA ROCK", Color(0xFF604078), Modifier.weight(1f), tracks.getOrNull(0)?.artworkUrl) { onOpenAlbum("Bangla Rock Anthems", "Bangla rock music") }
+            HomeAlbumTile("Bangla Indie Stories", "BANGLA INDIE", Color(0xFF3F6661), Modifier.weight(1f), tracks.getOrNull(1)?.artworkUrl) { onOpenAlbum("Bangla Indie Stories", "Bangla independent music") }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Alternative Pulse", "ALTERNATIVE", Color(0xFF755044), Modifier.weight(1f), tracks.getOrNull(2)?.artworkUrl) { onArtist("Bangla alternative songs") }
-            HomeAlbumTile("Acoustic Sessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.weight(1f), tracks.getOrNull(3)?.artworkUrl) { onArtist("Bangla acoustic songs") }
+            HomeAlbumTile("Alternative Pulse", "ALTERNATIVE", Color(0xFF755044), Modifier.weight(1f), tracks.getOrNull(2)?.artworkUrl) { onOpenAlbum("Alternative Pulse", "Bangla alternative music") }
+            HomeAlbumTile("Acoustic Sessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.weight(1f), tracks.getOrNull(3)?.artworkUrl) { onOpenAlbum("Acoustic Sessions", "Bangla acoustic music") }
         }
 
         Spacer(Modifier.height(24.dp))
         Text("LOFI & CHILL ALBUMS", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Purrple Cat", "LOFI BEATS", Color(0xFF554477), Modifier.weight(1f)) { onArtist("Purrple Cat lofi") }
-            HomeAlbumTile("Holizna", "FREE LOFI", Color(0xFF315D62), Modifier.weight(1f)) { onArtist("Holizna lofi beats") }
+            HomeAlbumTile("Purrple Cat", "LOFI BEATS", Color(0xFF554477), Modifier.weight(1f)) { onOpenAlbum("Purrple Cat", "Purrple Cat lofi") }
+            HomeAlbumTile("Holizna", "FREE LOFI", Color(0xFF315D62), Modifier.weight(1f)) { onOpenAlbum("Holizna", "Holizna lofi beats") }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Chillhop", "CHILL BEATS", Color(0xFF79513D), Modifier.weight(1f)) { onArtist("chillhop instrumental") }
-            HomeAlbumTile("Ambient Dreams", "INSTRUMENTAL", Color(0xFF48577B), Modifier.weight(1f)) { onArtist("ambient instrumental") }
+            HomeAlbumTile("Chillhop", "CHILL BEATS", Color(0xFF79513D), Modifier.weight(1f)) { onOpenAlbum("Chillhop", "chillhop instrumental") }
+            HomeAlbumTile("Ambient Dreams", "INSTRUMENTAL", Color(0xFF48577B), Modifier.weight(1f)) { onOpenAlbum("Ambient Dreams", "ambient instrumental") }
         }
 
         Spacer(Modifier.height(24.dp))
         Text("BANGLA BAND SPOTLIGHT", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Artcell Essentials", "ARTCELL", Color(0xFF553D73), Modifier.weight(1f)) { onArtist("Artcell full songs") }
-            HomeAlbumTile("Asees Collection", "ASEES", Color(0xFF315D62), Modifier.weight(1f)) { onArtist("Asees band full songs") }
+            HomeAlbumTile("Artcell Essentials", "ARTCELL", Color(0xFF553D73), Modifier.weight(1f)) { onOpenAlbum("Artcell Essentials", "Artcell") }
+            HomeAlbumTile("Asees Collection", "ASEES", Color(0xFF315D62), Modifier.weight(1f)) { onOpenAlbum("Asees Collection", "Asees band") }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Shonar Bangla Circus", "SBC", Color(0xFF79513D), Modifier.weight(1f)) { onArtist("Shonar Bangla Circus full songs") }
-            HomeAlbumTile("Highway Collection", "HIGHWAY", Color(0xFF48577B), Modifier.weight(1f)) { onArtist("Highway band full songs") }
+            HomeAlbumTile("Shonar Bangla Circus", "SBC", Color(0xFF79513D), Modifier.weight(1f)) { onOpenAlbum("Shonar Bangla Circus", "Shonar Bangla Circus") }
+            HomeAlbumTile("Highway Collection", "HIGHWAY", Color(0xFF48577B), Modifier.weight(1f)) { onOpenAlbum("Highway Collection", "Highway band") }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -666,15 +691,15 @@ private fun HomeScreen(
         Text("MORE TO EXPLORE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeGenreTile("Hindi Mix", "HINDI", Color(0xFF77523D), Modifier.weight(1f)) { onArtist("Hindi songs") }
-            HomeGenreTile("English Pop", "POP", Color(0xFF4E5480), Modifier.weight(1f)) { onArtist("English pop") }
-            HomeGenreTile("Acoustic", "SOFT", Color(0xFF53617B), Modifier.weight(1f)) { onArtist("acoustic songs") }
+            HomeGenreTile("Hindi Mix", "HINDI", Color(0xFF77523D), Modifier.weight(1f)) { onOpenAlbum("Hindi Mix", "Hindi music") }
+            HomeGenreTile("English Pop", "POP", Color(0xFF4E5480), Modifier.weight(1f)) { onOpenAlbum("English Pop", "English pop") }
+            HomeGenreTile("Acoustic", "SOFT", Color(0xFF53617B), Modifier.weight(1f)) { onOpenAlbum("Acoustic Sessions", "acoustic music") }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            HomeGenreTile("Rock Classics", "ROCK", Color(0xFF785044), Modifier.weight(1f)) { onArtist("rock classics") }
-            HomeGenreTile("Chill Mix", "CHILL", Color(0xFF4E6B70), Modifier.weight(1f)) { onArtist("chill music") }
-            HomeGenreTile("Modern Bangla", "BD", Color(0xFF526C63), Modifier.weight(1f)) { onArtist("modern Bangla") }
+            HomeGenreTile("Rock Classics", "ROCK", Color(0xFF785044), Modifier.weight(1f)) { onOpenAlbum("Rock Classics", "rock music") }
+            HomeGenreTile("Chill Mix", "CHILL", Color(0xFF4E6B70), Modifier.weight(1f)) { onOpenAlbum("Chill Mix", "chill music") }
+            HomeGenreTile("Modern Bangla", "BD", Color(0xFF526C63), Modifier.weight(1f)) { onOpenAlbum("Modern Bangla", "Bangla music") }
         }
         Spacer(Modifier.height(16.dp))
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
