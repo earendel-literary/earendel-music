@@ -894,46 +894,43 @@ private fun searchOnline(term: String): List<Track> {
     val cleanTerm = term.trim()
     if (cleanTerm.isBlank()) return emptyList()
 
-    // Build a mixed starter catalogue instead of filling the Home page with one genre.
-    // Every returned item still passes the explicit Creative Commons / public-domain
-    // licence and full-length checks inside searchArchive().
+    // Build a Bengali + Hindi starter catalogue only. Every track must pass
+    // searchArchive's explicit open-licence and full-length checks.
     val collected = mutableListOf<Track>()
-    val starterQueries = listOf(
-        cleanTerm to 12,
-        "lofi hip hop chill beats" to 10,
-        "Bangla independent music" to 8,
-        "Hindi classical folk music" to 8,
-        "English indie pop rock" to 8,
-        "acoustic piano ambient instrumental" to 8,
-        "jazz blues instrumental" to 8
+    val languageQueries = listOf(
+        "Bangla music" to 10,
+        "Bengali songs" to 10,
+        "Bengali folk music" to 10,
+        "Bangla folk songs" to 10,
+        "Baul songs Bengali" to 8,
+        "Rabindra Sangeet" to 8,
+        "Nazrul Geeti" to 8,
+        "Bengali independent music" to 8,
+        "Hindi music" to 10,
+        "Hindi songs" to 10,
+        "Hindi independent music" to 10,
+        "Hindi folk music" to 8,
+        "Hindi classical music" to 8,
+        "Hindi ghazal" to 8,
+        "Hindi devotional music" to 8
     )
-    for ((query, limit) in starterQueries) {
-        if (collected.distinctBy { it.id }.size >= 50) break
+    for ((query, limit) in languageQueries) {
+        if (collected.distinctBy { it.id }.size >= 60) break
         try {
-            val remaining = (50 - collected.distinctBy { it.id }.size).coerceAtLeast(1)
-            collected.addAll(searchArchive(query, minOf(limit, remaining + 5)))
+            val remaining = (60 - collected.distinctBy { it.id }.size).coerceAtLeast(1)
+            collected.addAll(searchArchive(query, minOf(limit, remaining + 3)))
         } catch (_: Exception) { }
     }
 
-    // Fill any remaining slots with additional openly licensed discovery searches.
-    if (collected.distinctBy { it.id }.size < 50) {
-        val extraQueries = listOf(
-            "Purrple Cat lofi", "Holizna lo-fi beats", "study beats",
-            "relaxing piano music", "downtempo instrumental", "chill instrumental music",
-            "Bengali folk music", "Bangla band music", "Hindi independent music",
-            "English ambient music", "electronic chillout"
-        )
-        for (extra in extraQueries) {
-            if (collected.distinctBy { it.id }.size >= 50) break
-            try {
-                val remaining = (50 - collected.distinctBy { it.id }.size).coerceAtLeast(1)
-                collected.addAll(searchArchive(extra, minOf(12, remaining + 4)))
-            } catch (_: Exception) { }
-        }
+    // Use the user's original search as a final language-specific discovery query.
+    if (collected.distinctBy { it.id }.size < 60) {
+        try {
+            val remaining = 60 - collected.distinctBy { it.id }.size
+            collected.addAll(searchArchive(cleanTerm, remaining + 3))
+        } catch (_: Exception) { }
     }
-    return collected.distinctBy { it.id }.take(50)
+    return collected.distinctBy { it.id }.take(60)
 }
-
 private fun searchArchive(term: String, maxResults: Int = 60): List<Track> {
     val client = OkHttpClient.Builder()
         .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
