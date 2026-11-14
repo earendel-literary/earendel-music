@@ -106,7 +106,7 @@ fun EarendelMusic(player: ExoPlayer) {
     var addTrackTarget by remember { mutableStateOf<Track?>(null) }
     var homeCollection by remember { mutableStateOf<String?>(null) }
     var selectedAlbum by remember { mutableStateOf<String?>(null) }
-    var isAuthenticated by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
+    var isAuthenticated by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
     val favorites = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "liked")) } }
     val playlists = remember { mutableStateListOf<UserPlaylist>().apply { addAll(readPlaylists(prefs)) } }
@@ -173,9 +173,7 @@ fun EarendelMusic(player: ExoPlayer) {
 
     LaunchedEffect(isAuthenticated) { if (isAuthenticated && tracks.isEmpty() && !loading) search("Bangla music") }
 
-    if (!isAuthenticated) {
-        AuthGate(onAuthenticated = { isAuthenticated = true })
-    } else MaterialTheme(colorScheme = darkColorScheme(background = ink, surface = panel, primary = violet, onBackground = Color.White, onSurface = Color.White)) {
+    MaterialTheme(colorScheme = darkColorScheme(background = ink, surface = panel, primary = violet, onBackground = Color.White, onSurface = Color.White)) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF241A38), ink, ink)))) {
             Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
                 Spacer(Modifier.height(40.dp))
