@@ -358,8 +358,8 @@ private fun NowPlayingScreen(
 ) {
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF302044), Color(0xFF120D1D), Color(0xFF07060B))))) {
         Column(
-            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 22.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween
+            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 30.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Top
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 IconButton(onClick = onBack) { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.White, modifier = Modifier.size(30.dp)) }
@@ -371,42 +371,42 @@ private fun NowPlayingScreen(
             }
             Column(Modifier.fillMaxWidth().weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    Box(Modifier.fillMaxWidth(.88f).aspectRatio(1f).clip(RoundedCornerShape(28.dp))
+                    Box(Modifier.fillMaxWidth(.78f).aspectRatio(1f).clip(RoundedCornerShape(25.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFF4C3767), Color(0xFF171020))))) {
-                        TrackArtwork(track.artworkUrl, Modifier.fillMaxSize(), 28.dp)
+                        TrackArtwork(track.artworkUrl, Modifier.fillMaxSize(), 25.dp)
                     }
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(track.title, color = Color.White, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text(track.artist, color = Color(0xFFC0B6D0), fontSize = 14.sp, maxLines = 1)
+                        Text(track.title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(track.artist, color = Color(0xFFC0B6D0), fontSize = 13.sp, maxLines = 1)
                     }
-                    IconButton(onClick = onLike) { Icon(Icons.Default.Favorite, null, tint = if (liked) violet else Color.White, modifier = Modifier.size(26.dp)) }
+                    IconButton(onClick = onLike) { Icon(Icons.Default.Favorite, null, tint = if (liked) violet else Color.White, modifier = Modifier.size(25.dp)) }
                 }
             }
             Column(Modifier.fillMaxWidth()) {
                 Slider(value = if (duration > 0) position.coerceIn(0f, duration) else 0f, onValueChange = onSeek,
                     valueRange = 0f..duration.coerceAtLeast(1f), colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = violet, inactiveTrackColor = Color(0xFF554B62)))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(timeLabel(position), color = muted, fontSize = 11.sp)
-                    Text(timeLabel(duration), color = muted, fontSize = 11.sp)
+                    Text(timeLabel(position), color = muted, fontSize = 10.sp)
+                    Text(timeLabel(duration), color = muted, fontSize = 10.sp)
                 }
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(10.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) violet else Color.White) }
-                    IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(34.dp)) }
-                    FilledIconButton(onClick = onTogglePlay, modifier = Modifier.size(76.dp), colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFF8A54F5))) {
-                        Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Color.White, modifier = Modifier.size(38.dp))
+                    IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(32.dp)) }
+                    FilledIconButton(onClick = onTogglePlay, modifier = Modifier.size(70.dp), colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFF8A54F5))) {
+                        Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Color.White, modifier = Modifier.size(35.dp))
                     }
-                    IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = Color.White, modifier = Modifier.size(34.dp)) }
+                    IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = Color.White, modifier = Modifier.size(32.dp)) }
                     IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) violet else Color.White) }
                 }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(9.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.GraphicEq, null, tint = violet, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (playing) "YOU ARE LISTENING" else "PLAYBACK PAUSED", color = muted, fontSize = 10.sp, letterSpacing = 1.5.sp)
+                    Icon(Icons.Default.GraphicEq, null, tint = violet, modifier = Modifier.size(17.dp))
+                    Spacer(Modifier.width(7.dp))
+                    Text(if (playing) "YOU ARE LISTENING" else "PLAYBACK PAUSED", color = muted, fontSize = 9.sp, letterSpacing = 1.3.sp)
                 }
             }
         }
