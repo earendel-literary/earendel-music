@@ -110,6 +110,10 @@ fun EarendelMusic(player: ExoPlayer) {
     val favorites = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "liked")) } }
     val playlists = remember { mutableStateListOf<UserPlaylist>().apply { addAll(readPlaylists(prefs)) } }
     val localSongs = remember { mutableStateListOf<Track>().apply { addAll(readTracks(prefs, "local_songs")) } }
+    fun persist() {
+        prefs.edit().putString("liked", tracksJson(favorites)).putString("playlists", playlistsJson(playlists)).putString("local_songs", tracksJson(localSongs)).apply()
+    }
+
     val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) {
             uris.forEach { uri ->
@@ -124,9 +128,6 @@ fun EarendelMusic(player: ExoPlayer) {
         }
     }
 
-    fun persist() {
-        prefs.edit().putString("liked", tracksJson(favorites)).putString("playlists", playlistsJson(playlists)).putString("local_songs", tracksJson(localSongs)).apply()
-    }
     fun search(term: String) {
         if (term.isBlank()) return
         loading = true
