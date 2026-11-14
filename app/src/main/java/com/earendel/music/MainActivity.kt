@@ -1,8 +1,6 @@
 package com.earendel.music
 
 import android.os.Bundle
-import android.content.Intent
-import android.net.Uri
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CustomCredential
@@ -181,20 +179,6 @@ fun EarendelMusic(player: ExoPlayer) {
                         Spacer(Modifier.height(14.dp))
                         SearchBox(query, { query = it }, { search(query) })
                         Spacer(Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = {
-                                val songQuery = query.trim().ifBlank { "Bangla English Hindi full songs" }
-                                val url = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(songQuery, "UTF-8")
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = violet)
-                        ) {
-                            Icon(Icons.Default.PlayCircleFilled, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Find full songs on YouTube")
-                        }
-                        Text("Official uploads open in YouTube. In-app playback is shown only for tracks with a permitted stream.", color = muted, fontSize = 10.sp)
                         Spacer(Modifier.height(10.dp))
                         Text(message, color = muted, fontSize = 12.sp)
                         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
@@ -600,6 +584,18 @@ private fun HomeScreen(
             HomeAlbumTile("Acoustic Sessions", "ACOUSTIC", Color(0xFF465B7C), Modifier.width(148.dp), tracks.getOrNull(3)?.artworkUrl) { onArtist("Bangla acoustic songs") }
         }
         Spacer(Modifier.height(20.dp))
+        Text("LOFI & CHILL ALBUMS", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(11.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Purrple Cat", "LOFI BEATS", Color(0xFF554477), Modifier.weight(1f), null) { onArtist("Purrple Cat lofi") }
+            HomeAlbumTile("Holizna", "FREE LOFI", Color(0xFF315D62), Modifier.weight(1f), null) { onArtist("Holizna lofi beats") }
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeAlbumTile("Chillhop", "CHILL BEATS", Color(0xFF79513D), Modifier.weight(1f), null) { onArtist("chillhop instrumental") }
+            HomeAlbumTile("Ambient Dreams", "INSTRUMENTAL", Color(0xFF48577B), Modifier.weight(1f), null) { onArtist("ambient instrumental") }
+        }
+        Spacer(Modifier.height(20.dp))
         Text("BANGLA BAND SPOTLIGHT", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -610,13 +606,6 @@ private fun HomeScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             HomeAlbumTile("Shonar Bangla Circus", "SBC", Color(0xFF79513D), Modifier.weight(1f), null) { onArtist("Shonar Bangla Circus full songs") }
             HomeAlbumTile("Highway Collection", "HIGHWAY", Color(0xFF48577B), Modifier.weight(1f), null) { onArtist("Highway band full songs") }
-        }
-        Spacer(Modifier.height(20.dp))
-        Text("HINDI & ENGLISH MIX", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(11.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeAlbumTile("Hindi Melodies", "HINDI HITS", Color(0xFF80513E), Modifier.weight(1f), null) { onArtist("Hindi hit songs") }
-            HomeAlbumTile("English Afterglow", "ENGLISH POP", Color(0xFF4A4C79), Modifier.weight(1f), null) { onArtist("English pop full songs") }
         }
         Spacer(Modifier.height(20.dp))
         Box(
