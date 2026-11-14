@@ -678,11 +678,11 @@ private fun HomeScreen(
         }
         Spacer(Modifier.height(16.dp))
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = violet)
-        Text("DISCOVER MUSIC", color = muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+        Text("SONGS FOR YOU", color = muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
         Text(message, color = muted, fontSize = 10.sp, modifier = Modifier.padding(top = 5.dp))
         if (tracks.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            tracks.take(5).forEach { track ->
+            tracks.take(12).forEach { track ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).background(panel, RoundedCornerShape(13.dp)).clickable { onPlay(track) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     TrackArtwork(track.artworkUrl, Modifier.size(46.dp), 9.dp)
                     Spacer(Modifier.width(10.dp))
@@ -922,26 +922,42 @@ private fun readPlaylists(prefs: android.content.SharedPreferences): List<UserPl
 private fun searchOnline(term: String): List<Track> {
     val cleanTerm = term.trim()
     if (cleanTerm.isBlank()) return emptyList()
-    // Search a broader Bengali/Hindi catalogue and return up to 50 permitted full-length tracks.
-    // Only items whose uploader declares a Creative Commons or public-domain licence are streamed.
+
+    // Build a mixed starter catalogue instead of filling the Home page with one genre.
+    // Every returned item still passes the explicit Creative Commons / public-domain
+    // licence and full-length checks inside searchArchive().
     val collected = mutableListOf<Track>()
-    try { collected.addAll(searchArchive(cleanTerm, 35)) } catch (_: Exception) { }
+    val starterQueries = listOf(
+        cleanTerm to 12,
+        "lofi hip hop chill beats" to 10,
+        "Bangla independent music" to 8,
+        "Hindi classical folk music" to 8,
+        "English indie pop rock" to 8,
+        "acoustic piano ambient instrumental" to 8,
+        "jazz blues instrumental" to 8
+    )
+    for ((query, limit) in starterQueries) {
+        if (collected.distinctBy { it.id }.size >= 50) break
+        try {
+            val remaining = (50 - collected.distinctBy { it.id }.size).coerceAtLeast(1)
+            collected.addAll(searchArchive(query, minOf(limit, remaining + 5)))
+        } catch (_: Exception) { }
+    }
+
+    // Fill any remaining slots with additional openly licensed discovery searches.
     if (collected.distinctBy { it.id }.size < 50) {
         val extraQueries = listOf(
-            // Prioritise full-length openly licensed lo-fi and instrumental music.
-            "lofi hip hop", "lo-fi beats", "chillhop", "lofi instrumental",
-            "Purrple Cat lofi", "Holizna lo-fi beats", "lofi chill beats",
-            "study beats", "ambient instrumental", "relaxing piano music",
-            "downtempo instrumental", "chill instrumental music",
-            // Keep Bengali and Hindi discovery in the same catalogue.
-            "Bangla songs", "Bengali music", "Bengali folk music",
-            "Bangla independent music", "Bangla band music",
-            "Hindi songs", "Hindi classical music", "Hindi folk music",
-            "Hindi independent music"
+            "Purrple Cat lofi", "Holizna lo-fi beats", "study beats",
+            "relaxing piano music", "downtempo instrumental", "chill instrumental music",
+            "Bengali folk music", "Bangla band music", "Hindi independent music",
+            "English ambient music", "electronic chillout"
         )
         for (extra in extraQueries) {
             if (collected.distinctBy { it.id }.size >= 50) break
-            try { collected.addAll(searchArchive(extra, 25)) } catch (_: Exception) { }
+            try {
+                val remaining = (50 - collected.distinctBy { it.id }.size).coerceAtLeast(1)
+                collected.addAll(searchArchive(extra, minOf(12, remaining + 4)))
+            } catch (_: Exception) { }
         }
     }
     return collected.distinctBy { it.id }.take(50)
