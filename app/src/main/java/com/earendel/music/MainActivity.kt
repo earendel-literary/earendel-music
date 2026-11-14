@@ -214,7 +214,7 @@ fun EarendelMusic(player: ExoPlayer) {
                             FilledTonalButton(onClick = { audioPicker.launch(arrayOf("audio/*")) }, colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF392752), contentColor = violet)) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(Modifier.width(4.dp))
-                                Text("Add songs", fontSize = 12.sp)
+                                Text("Add from phone", fontSize = 12.sp)
                             }
                         }
                         Spacer(Modifier.height(14.dp))
@@ -239,8 +239,8 @@ fun EarendelMusic(player: ExoPlayer) {
                             TrackList(pl?.tracks ?: emptyList(), favorites, onPlay = { play(it, pl?.tracks ?: emptyList()) }, onLike = { toggleLike(it) }, onAdd = { addTrackTarget = it })
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("YOUR PLAYLISTS", color = muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                TextButton(onClick = { showCreate = true }) { Icon(Icons.Default.Add, null, tint = violet); Text("Create", color = violet) }
+                                Text("YOUR ALBUMS & PLAYLISTS", color = muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                TextButton(onClick = { showCreate = true }) { Icon(Icons.Default.Add, null, tint = violet); Text("New album", color = violet) }
                             }
                             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
                                 item {
@@ -252,7 +252,7 @@ fun EarendelMusic(player: ExoPlayer) {
                                 items(playlists, key = { it.name }) { pl ->
                                     LibraryRow(pl.name, "${pl.tracks.size} songs", "♫", Color(0xFF8E77C8)) { selectedPlaylist = pl.name }
                                 }
-                                if (playlists.isEmpty()) item { Text("Your playlists will appear here. Create one to get started.", color = muted, fontSize = 13.sp) }
+                                if (playlists.isEmpty()) item { Text("Your albums will appear here. Create one, then add songs from Search or My Songs.", color = muted, fontSize = 13.sp) }
                             }
                         }
                         }
@@ -351,8 +351,8 @@ fun EarendelMusic(player: ExoPlayer) {
 
         if (showCreate) AlertDialog(
             onDismissRequest = { showCreate = false },
-            title = { Text("Create playlist", color = Color.White) },
-            text = { OutlinedTextField(value = newPlaylistName, onValueChange = { newPlaylistName = it }, label = { Text("Playlist name") }, singleLine = true) },
+            title = { Text("Create album / playlist", color = Color.White) },
+            text = { OutlinedTextField(value = newPlaylistName, onValueChange = { newPlaylistName = it }, label = { Text("Album / playlist name") }, singleLine = true) },
             confirmButton = { TextButton(onClick = {
                 val name = newPlaylistName.trim()
                 if (name.isNotEmpty() && playlists.none { it.name.equals(name, true) }) {
@@ -367,10 +367,10 @@ fun EarendelMusic(player: ExoPlayer) {
         addTrackTarget?.let { track ->
             AlertDialog(
                 onDismissRequest = { addTrackTarget = null },
-                title = { Text("Add to playlist", color = Color.White) },
+                title = { Text("Add song to album / playlist", color = Color.White) },
                 text = {
                     Column {
-                        if (playlists.isEmpty()) Text("Create a playlist in Your Library first.", color = muted)
+                        if (playlists.isEmpty()) Text("Create an album in Your Library first.", color = muted)
                         playlists.forEach { pl ->
                             TextButton(onClick = {
                                 val index = playlists.indexOfFirst { it.name == pl.name }
